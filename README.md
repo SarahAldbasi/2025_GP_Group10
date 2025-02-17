@@ -1,2 +1,15 @@
-# 2025_GP_Group10
-A system that tracks the ball’s position in real-time to assist referees with accurate decisions on goals, out-of-play events, and corner kick placement, enhancing game fairness and flow.
+# **Hakkim – Smart Officiating System** ⚽  
+
+**Hakkim** is a **real-time football tracking system** that helps referees make **faster and more accurate decisions** through **smartwatch alerts** and **ball tracking**.  
+
+---
+
+## **✨ Features**  
+
+- ⌚ **Instant Smartwatch Alerts** – Get real-time notifications for **goals, out-of-play events, and corner kick violations**.  
+- ⚽ **Ball Tracking** – Uses **Ultra-Wideband (UWB) technology** for precise positioning.  
+- 📱 **Mobile App** – Manage **match assignments** and **review events** efficiently.
+
+---
+
+2025_GP_Group10
