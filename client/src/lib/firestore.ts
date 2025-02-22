@@ -67,11 +67,14 @@ export const subscribeToReferees = (callback: (referees: Referee[]) => void) => 
 // Optimized referee operations with better error handling
 export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
   try {
+    console.log('Saving referee to Firestore:', referee);
     const docRef = await addDoc(refereesCollection, {
       ...referee,
       createdAt: Timestamp.now()
     });
-    return { id: docRef.id, ...referee };
+    const savedReferee = { id: docRef.id, ...referee };
+    console.log('Successfully saved referee:', savedReferee);
+    return savedReferee;
   } catch (error) {
     console.error('Error creating referee:', error);
     // Attempt to reconnect if there's a network error
