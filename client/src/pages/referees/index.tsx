@@ -27,15 +27,25 @@ export default function Referees() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: referees = [], isLoading } = useQuery({
+  // Add error boundary for initial data load
+  const { data: referees = [], isLoading, error } = useQuery({
     queryKey: ['referees'],
-    queryFn: getReferees,
+    queryFn: async () => {
+      console.log('Fetching referees...');
+      const data = await getReferees();
+      console.log('Fetched referees:', data);
+      return data;
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const createMutation = useMutation({
-    mutationFn: createReferee,
-    onSuccess: () => {
+    mutationFn: (data: Omit<Referee, 'id'>) => {
+      console.log('Creating referee with data:', data);
+      return createReferee(data);
+    },
+    onSuccess: (data) => {
+      console.log('Referee created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       toast({ title: 'Referee added successfully' });
@@ -51,8 +61,12 @@ export default function Referees() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: Referee) => updateReferee(id!, data),
+    mutationFn: ({ id, ...data }: Referee) => {
+      console.log('Updating referee:', id, data);
+      return updateReferee(id!, data);
+    },
     onSuccess: () => {
+      console.log('Referee updated successfully');
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       setSelectedReferee(null);
@@ -85,15 +99,21 @@ export default function Referees() {
   });
 
   const handleEdit = (referee: Referee) => {
+    console.log('Editing referee:', referee);
     setSelectedReferee(referee);
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (data: Omit<Referee, 'id'>) => {
-    if (selectedReferee) {
-      updateMutation.mutate({ ...data, id: selectedReferee.id! });
-    } else {
-      createMutation.mutate(data);
+  const handleSubmit = async (data: Omit<Referee, 'id'>) => {
+    console.log('Form submitted with data:', data);
+    try {
+      if (selectedReferee) {
+        await updateMutation.mutateAsync({ ...data, id: selectedReferee.id! });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
+    } catch (error) {
+      console.error('Error in form submission:', error);
     }
   };
 
@@ -101,6 +121,18 @@ export default function Referees() {
     setIsDialogOpen(false);
     setSelectedReferee(null);
   };
+
+  // Handle initial loading error
+  if (error) {
+    console.error('Error loading referees:', error);
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-[50vh]">
+          <div className="text-lg text-red-500">Error loading referees. Please try again later.</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (isLoading) {
     return (

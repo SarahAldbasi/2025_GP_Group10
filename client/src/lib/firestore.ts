@@ -40,76 +40,126 @@ export interface Match {
 
 // Referee operations
 export const getReferees = async (): Promise<Referee[]> => {
-  const snapshot = await getDocs(refereesCollection);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Referee));
+  try {
+    const snapshot = await getDocs(refereesCollection);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Referee));
+  } catch (error) {
+    console.error('Error getting referees:', error);
+    throw error;
+  }
 };
 
 export const getReferee = async (id: string): Promise<Referee | null> => {
-  const docRef = doc(refereesCollection, id);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as Referee;
+  try {
+    const docRef = doc(refereesCollection, id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as Referee;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting referee:', error);
+    throw error;
   }
-  return null;
 };
 
 export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
-  const docRef = await addDoc(refereesCollection, referee);
-  return { id: docRef.id, ...referee };
+  try {
+    const docRef = await addDoc(refereesCollection, referee);
+    return { id: docRef.id, ...referee };
+  } catch (error) {
+    console.error('Error creating referee:', error);
+    throw error;
+  }
 };
 
 export const updateReferee = async (id: string, referee: Partial<Referee>): Promise<void> => {
-  const docRef = doc(refereesCollection, id);
-  await updateDoc(docRef, referee);
+  try {
+    const docRef = doc(refereesCollection, id);
+    await updateDoc(docRef, referee);
+  } catch (error) {
+    console.error('Error updating referee:', error);
+    throw error;
+  }
 };
 
 export const deleteReferee = async (id: string): Promise<void> => {
-  const docRef = doc(refereesCollection, id);
-  await deleteDoc(docRef);
+  try {
+    const docRef = doc(refereesCollection, id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error deleting referee:', error);
+    throw error;
+  }
 };
 
 // Match operations
 export const getMatches = async (): Promise<Match[]> => {
-  const snapshot = await getDocs(matchesCollection);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    date: (doc.data().date as Timestamp).toDate()
-  } as Match));
+  try {
+    const snapshot = await getDocs(matchesCollection);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      date: (doc.data().date as Timestamp).toDate()
+    } as Match));
+  } catch (error) {
+    console.error('Error getting matches:', error);
+    throw error;
+  }
 };
 
 export const getMatch = async (id: string): Promise<Match | null> => {
-  const docRef = doc(matchesCollection, id);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    return {
-      id: docSnap.id,
-      ...data,
-      date: (data.date as Timestamp).toDate()
-    } as Match;
+  try {
+    const docRef = doc(matchesCollection, id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        ...data,
+        date: (data.date as Timestamp).toDate()
+      } as Match;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting match:', error);
+    throw error;
   }
-  return null;
 };
 
 export const createMatch = async (match: Omit<Match, 'id'>): Promise<Match> => {
-  const docRef = await addDoc(matchesCollection, {
-    ...match,
-    date: Timestamp.fromDate(match.date)
-  });
-  return { id: docRef.id, ...match };
+  try {
+    const docRef = await addDoc(matchesCollection, {
+      ...match,
+      date: Timestamp.fromDate(match.date)
+    });
+    return { id: docRef.id, ...match };
+  } catch (error) {
+    console.error('Error creating match:', error);
+    throw error;
+  }
 };
 
 export const updateMatch = async (id: string, match: Partial<Match>): Promise<void> => {
-  const docRef = doc(matchesCollection, id);
-  const updateData = { ...match };
-  if (match.date) {
-    updateData.date = Timestamp.fromDate(match.date);
+  try {
+    const docRef = doc(matchesCollection, id);
+    const updateData = { ...match };
+    if (match.date) {
+      updateData.date = Timestamp.fromDate(match.date);
+    }
+    await updateDoc(docRef, updateData);
+  } catch (error) {
+    console.error('Error updating match:', error);
+    throw error;
   }
-  await updateDoc(docRef, updateData);
 };
 
 export const deleteMatch = async (id: string): Promise<void> => {
-  const docRef = doc(matchesCollection, id);
-  await deleteDoc(docRef);
+  try {
+    const docRef = doc(matchesCollection, id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error deleting match:', error);
+    throw error;
+  }
 };
