@@ -81,12 +81,14 @@ export default function Login() {
 
           <div className="mt-6 text-center">
             <p className="text-[#787878] mb-4">or login with</p>
-            <button
-              onClick={handleGoogleSignIn}
-              className="w-12 h-12 rounded-full bg-[#2b2b2b] flex items-center justify-center hover:bg-[#3b3b3b] transition-colors"
-            >
-              <SiGoogle className="w-5 h-5 text-white" />
-            </button>
+            <div className="flex justify-center">
+              <button
+                onClick={handleGoogleSignIn}
+                className="w-12 h-12 rounded-full bg-[#2b2b2b] flex items-center justify-center hover:bg-[#3b3b3b] transition-colors"
+              >
+                <SiGoogle className="w-5 h-5 text-white" />
+              </button>
+            </div>
           </div>
 
           <Link href="/signup">

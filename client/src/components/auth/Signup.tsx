@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { auth, googleProvider } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from 'firebase/auth';
@@ -10,11 +10,21 @@ import { SiGoogle } from 'react-icons/si';
 
 export default function Signup() {
   const [, setLocation] = useLocation();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (confirmPassword && password !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+    } else {
+      setPasswordError('');
+    }
+  }, [password, confirmPassword]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +40,9 @@ export default function Signup() {
 
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(user, { displayName: name });
+      await updateProfile(user, { 
+        displayName: `${firstName} ${lastName}`,
+      });
       setLocation('/dashboard');
     } catch (error) {
       toast({
@@ -63,19 +75,31 @@ export default function Signup() {
           <h1 className="text-2xl font-bold text-white text-center mb-6">Let's get started!</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="text"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg"
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="text"
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg"
+                required
+              />
+              <Input
+                type="text"
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg"
+                required
+              />
+            </div>
             <Input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg"
+              required
             />
             <Input
               type="password"
@@ -83,14 +107,23 @@ export default function Signup() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg"
+              required
             />
-            <Input
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg"
-            />
+            <div>
+              <Input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg ${
+                  passwordError ? 'border-red-500' : ''
+                }`}
+                required
+              />
+              {passwordError && (
+                <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+              )}
+            </div>
 
             <Button 
               type="submit" 
@@ -102,12 +135,14 @@ export default function Signup() {
 
           <div className="mt-6 text-center">
             <p className="text-[#787878] mb-4">or sign up with</p>
-            <button
-              onClick={handleGoogleSignUp}
-              className="w-12 h-12 rounded-full bg-[#2b2b2b] flex items-center justify-center hover:bg-[#3b3b3b] transition-colors"
-            >
-              <SiGoogle className="w-5 h-5 text-white" />
-            </button>
+            <div className="flex justify-center">
+              <button
+                onClick={handleGoogleSignUp}
+                className="w-12 h-12 rounded-full bg-[#2b2b2b] flex items-center justify-center hover:bg-[#3b3b3b] transition-colors"
+              >
+                <SiGoogle className="w-5 h-5 text-white" />
+              </button>
+            </div>
           </div>
 
           <Link href="/login">
