@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="fixed inset-y-0 left-0">
         <Sidebar />
       </div>
-      <main className="flex-1 pl-64 p-8">
+      <main className="flex-1 pl-72 p-8">
         {children}
       </main>
     </div>

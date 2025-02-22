@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'wouter';
-import { LogOut, Home, Calendar, Users } from 'lucide-react';
+import { LogOut, Home, Calendar, Users, UserCircle } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 
@@ -43,6 +43,15 @@ export default function Sidebar() {
           }`}>
             <Users className="mr-3" />
             Referees
+          </div>
+        </Link>
+
+        <Link href="/profile">
+          <div className={`flex items-center p-3 rounded-lg mb-2 cursor-pointer ${
+            isActive('/profile') ? 'bg-[#6ab100]' : 'hover:bg-[#2b2b2b]'
+          }`}>
+            <UserCircle className="mr-3" />
+            Profile
           </div>
         </Link>
       </nav>

@@ -29,9 +29,10 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#171717] bg-[url('/ball-net.png')] bg-cover bg-center">
+      <img src="/Hakkim_white.png" alt="Hakkim Logo" className="absolute top-4 left-4 w-32" />
+
       <Card className="w-full max-w-md mx-4 bg-[#212121] rounded-xl border-0">
         <CardContent className="pt-6">
-          <img src="/Hakkim_white.png" alt="Hakkim Logo" className="w-32 mb-6 mx-auto" />
           <h1 className="text-2xl font-bold text-white text-center mb-6">Welcome!</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -49,6 +50,12 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="bg-[#2b2b2b] border-0 text-white placeholder:text-[#787878] rounded-lg"
             />
+
+            <Link href="/forgot-password">
+              <span className="block text-right text-sm text-[#6ab100] cursor-pointer">
+                Forgot Password?
+              </span>
+            </Link>
 
             <Button 
               type="submit" 
