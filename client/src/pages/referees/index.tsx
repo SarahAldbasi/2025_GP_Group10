@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import RefereeCard from '@/components/referees/RefereeCard';
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  getReferees, 
+  subscribeToReferees,
   createReferee, 
   updateReferee, 
   deleteReferee,
@@ -24,115 +24,85 @@ import {
 export default function Referees() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedReferee, setSelectedReferee] = useState<Referee | null>(null);
-  const queryClient = useQueryClient();
+  const [referees, setReferees] = useState<Referee[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const { data: referees = [], isLoading } = useQuery({
-    queryKey: ['referees'],
-    queryFn: getReferees,
-  });
+  useEffect(() => {
+    // Subscribe to real-time updates
+    const unsubscribe = subscribeToReferees((updatedReferees) => {
+      setReferees(updatedReferees);
+      setIsLoading(false);
+    });
 
-  const createMutation = useMutation({
-    mutationFn: createReferee,
-    onMutate: () => {
-      // Show immediate feedback
-      toast({ title: 'Adding referee...' });
-    },
-    onSuccess: (newReferee) => {
-      // Optimistically update the UI
-      queryClient.setQueryData(['referees'], (old: Referee[] = []) => [...old, newReferee]);
-      queryClient.invalidateQueries({ queryKey: ['referees'] });
-      setIsDialogOpen(false);
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleCreate = async (data: Omit<Referee, 'id'>) => {
+    setIsSubmitting(true);
+    try {
+      await createReferee(data);
       toast({ title: 'Referee added successfully' });
-    },
-    onError: (error) => {
-      console.error('Create error:', error);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating referee:', error);
       toast({ 
         variant: "destructive",
         title: 'Error adding referee',
         description: 'Please try again later.'
       });
-    },
-    onSettled: () => {
-      // Ensure form resets whether success or error
-      setIsDialogOpen(false);
+    } finally {
+      setIsSubmitting(false);
     }
-  });
+  };
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: Referee) => {
+  const handleUpdate = async (data: Referee) => {
+    setIsSubmitting(true);
+    try {
       const { id, ...updateData } = data;
       await updateReferee(id!, updateData);
-      return data;
-    },
-    onMutate: () => {
-      toast({ title: 'Updating referee...' });
-    },
-    onSuccess: (updatedReferee) => {
-      // Optimistically update the UI
-      queryClient.setQueryData(['referees'], (old: Referee[] = []) => 
-        old.map(ref => ref.id === updatedReferee.id ? updatedReferee : ref)
-      );
-      queryClient.invalidateQueries({ queryKey: ['referees'] });
+      toast({ title: 'Referee updated successfully' });
       setIsDialogOpen(false);
       setSelectedReferee(null);
-      toast({ title: 'Referee updated successfully' });
-    },
-    onError: (error) => {
-      console.error('Update error:', error);
+    } catch (error) {
+      console.error('Error updating referee:', error);
       toast({ 
         variant: "destructive",
         title: 'Error updating referee',
         description: 'Please try again later.'
       });
-    },
-    onSettled: () => {
-      setIsDialogOpen(false);
-      setSelectedReferee(null);
+    } finally {
+      setIsSubmitting(false);
     }
-  });
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteReferee,
-    onMutate: (id) => {
-      // Optimistically remove from UI
-      queryClient.setQueryData(['referees'], (old: Referee[] = []) => 
-        old.filter(ref => ref.id !== id)
-      );
-      toast({ title: 'Deleting referee...' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['referees'] });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteReferee(id);
       toast({ title: 'Referee deleted successfully' });
-    },
-    onError: (error) => {
-      console.error('Delete error:', error);
+    } catch (error) {
+      console.error('Error deleting referee:', error);
       toast({ 
         variant: "destructive",
         title: 'Error deleting referee',
         description: 'Please try again later.'
       });
-      // Revert optimistic update
-      queryClient.invalidateQueries({ queryKey: ['referees'] });
     }
-  });
+  };
+
+  const handleSubmit = async (data: Omit<Referee, 'id'>) => {
+    if (selectedReferee) {
+      await handleUpdate({ ...data, id: selectedReferee.id! });
+    } else {
+      await handleCreate(data);
+    }
+  };
 
   const handleEdit = (referee: Referee) => {
     setSelectedReferee(referee);
     setIsDialogOpen(true);
-  };
-
-  const handleSubmit = async (data: Omit<Referee, 'id'>) => {
-    try {
-      if (selectedReferee) {
-        await updateMutation.mutateAsync({ ...data, id: selectedReferee.id! });
-      } else {
-        await createMutation.mutateAsync(data);
-      }
-    } catch (error) {
-      // Error handling is done in mutation callbacks
-      console.error('Form submission error:', error);
-    }
   };
 
   const handleClose = () => {
@@ -164,7 +134,7 @@ export default function Referees() {
               key={referee.id}
               referee={referee}
               onEdit={handleEdit}
-              onDelete={(id) => deleteMutation.mutate(id)}
+              onDelete={handleDelete}
             />
           ))}
           {referees.length === 0 && (
@@ -188,7 +158,7 @@ export default function Referees() {
           <RefereeForm
             onSubmit={handleSubmit}
             defaultValues={selectedReferee || undefined}
-            isSubmitting={createMutation.isPending || updateMutation.isPending}
+            isSubmitting={isSubmitting}
           />
         </DialogContent>
       </Dialog>

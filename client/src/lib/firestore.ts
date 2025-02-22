@@ -1,15 +1,16 @@
 import { 
   collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
+  doc,
+  getDocs,
+  addDoc,
+  updateDoc,
   deleteDoc,
   query,
   where,
   Timestamp,
-  writeBatch
+  onSnapshot,
+  enableNetwork,
+  disableNetwork
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -39,7 +40,81 @@ export interface Match {
   assistantReferee2?: string | null;
 }
 
-// Referee operations
+// Network status management
+export const goOffline = () => disableNetwork(db);
+export const goOnline = () => enableNetwork(db);
+
+// Real-time referee subscription with error handling and reconnection
+export const subscribeToReferees = (callback: (referees: Referee[]) => void) => {
+  return onSnapshot(refereesCollection, 
+    (snapshot) => {
+      const referees = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Referee));
+      callback(referees);
+    },
+    (error) => {
+      console.error('Error in referee subscription:', error);
+      // Attempt to reconnect if there's a network error
+      if (error.code === 'unavailable') {
+        goOnline().catch(console.error);
+      }
+    }
+  );
+};
+
+// Optimized referee operations with better error handling
+export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
+  try {
+    const docRef = await addDoc(refereesCollection, {
+      ...referee,
+      createdAt: Timestamp.now()
+    });
+    return { id: docRef.id, ...referee };
+  } catch (error) {
+    console.error('Error creating referee:', error);
+    // Attempt to reconnect if there's a network error
+    if (error.code === 'unavailable') {
+      await goOnline();
+      return createReferee(referee);
+    }
+    throw error;
+  }
+};
+
+export const updateReferee = async (id: string, referee: Partial<Referee>): Promise<void> => {
+  try {
+    const docRef = doc(refereesCollection, id);
+    await updateDoc(docRef, {
+      ...referee,
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    console.error('Error updating referee:', error);
+    if (error.code === 'unavailable') {
+      await goOnline();
+      return updateReferee(id, referee);
+    }
+    throw error;
+  }
+};
+
+export const deleteReferee = async (id: string): Promise<void> => {
+  try {
+    const docRef = doc(refereesCollection, id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error deleting referee:', error);
+    if (error.code === 'unavailable') {
+      await goOnline();
+      return deleteReferee(id);
+    }
+    throw error;
+  }
+};
+
+// Referee operations with optimized batching (from original, not modified in edited snippet)
 export const getReferees = async (): Promise<Referee[]> => {
   try {
     const snapshot = await getDocs(refereesCollection);
@@ -53,63 +128,8 @@ export const getReferees = async (): Promise<Referee[]> => {
   }
 };
 
-export const getReferee = async (id: string): Promise<Referee | null> => {
-  try {
-    const docRef = doc(refereesCollection, id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() } as Referee;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting referee:', error);
-    throw error;
-  }
-};
 
-export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
-  try {
-    const batch = writeBatch(db);
-    const docRef = doc(refereesCollection);
-    const newReferee = { ...referee };
-
-    batch.set(docRef, newReferee);
-    await batch.commit();
-
-    return { id: docRef.id, ...newReferee };
-  } catch (error) {
-    console.error('Error creating referee:', error);
-    throw error;
-  }
-};
-
-export const updateReferee = async (id: string, referee: Partial<Referee>): Promise<void> => {
-  try {
-    const batch = writeBatch(db);
-    const docRef = doc(refereesCollection, id);
-
-    batch.update(docRef, referee);
-    await batch.commit();
-  } catch (error) {
-    console.error('Error updating referee:', error);
-    throw error;
-  }
-};
-
-export const deleteReferee = async (id: string): Promise<void> => {
-  try {
-    const batch = writeBatch(db);
-    const docRef = doc(refereesCollection, id);
-
-    batch.delete(docRef);
-    await batch.commit();
-  } catch (error) {
-    console.error('Error deleting referee:', error);
-    throw error;
-  }
-};
-
-// Match operations with optimized batch processing
+// Match operations with optimized batch processing (from original, not modified in edited snippet)
 export const getMatches = async (): Promise<Match[]> => {
   try {
     const snapshot = await getDocs(matchesCollection);
@@ -191,4 +211,11 @@ export const deleteMatch = async (id: string): Promise<void> => {
     console.error('Error deleting match:', error);
     throw error;
   }
+};
+
+// Export all necessary functions and types
+export { 
+  refereesCollection,
+  matchesCollection,
+  Timestamp
 };

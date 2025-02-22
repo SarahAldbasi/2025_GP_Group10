@@ -27,40 +27,27 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-console.log('Initializing Firebase with config:', {
-  ...firebaseConfig,
-  apiKey: '[REDACTED]'
-});
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
 
-let app;
+// Enable offline persistence with better error handling
 try {
-  app = initializeApp(firebaseConfig);
-  console.log('Firebase app initialized successfully');
-} catch (error) {
-  console.error('Error initializing Firebase app:', error);
-  throw error;
-}
-
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
-
-// Enable offline persistence
-try {
-  enableIndexedDbPersistence(db).catch((err) => {
+  enableIndexedDbPersistence(db, {
+    synchronizeTabs: true
+  }).catch((err) => {
     if (err.code === 'failed-precondition') {
-      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
+      // Multiple tabs open, persistence can only be enabled in one tab at a time
+      console.warn('Firebase persistence is only enabled in one tab at a time');
     } else if (err.code === 'unimplemented') {
-      console.warn('The current browser does not support persistence.');
+      // The current browser doesn't support persistence
+      console.warn('Current browser does not support persistence');
     }
   });
 } catch (error) {
   console.error('Error enabling persistence:', error);
 }
 
-// Verify Firestore is initialized
-if (!db) {
-  throw new Error('Failed to initialize Firestore');
-}
-
-export default app;
+export { app as default, auth, db, googleProvider };
