@@ -8,7 +8,8 @@ import {
   deleteDoc,
   query,
   where,
-  Timestamp 
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -42,7 +43,10 @@ export interface Match {
 export const getReferees = async (): Promise<Referee[]> => {
   try {
     const snapshot = await getDocs(refereesCollection);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Referee));
+    return snapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data() 
+    } as Referee));
   } catch (error) {
     console.error('Error getting referees:', error);
     throw error;
@@ -65,8 +69,14 @@ export const getReferee = async (id: string): Promise<Referee | null> => {
 
 export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
   try {
-    const docRef = await addDoc(refereesCollection, referee);
-    return { id: docRef.id, ...referee };
+    const batch = writeBatch(db);
+    const docRef = doc(refereesCollection);
+    const newReferee = { ...referee };
+
+    batch.set(docRef, newReferee);
+    await batch.commit();
+
+    return { id: docRef.id, ...newReferee };
   } catch (error) {
     console.error('Error creating referee:', error);
     throw error;
@@ -75,8 +85,11 @@ export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Refer
 
 export const updateReferee = async (id: string, referee: Partial<Referee>): Promise<void> => {
   try {
+    const batch = writeBatch(db);
     const docRef = doc(refereesCollection, id);
-    await updateDoc(docRef, referee);
+
+    batch.update(docRef, referee);
+    await batch.commit();
   } catch (error) {
     console.error('Error updating referee:', error);
     throw error;
@@ -85,15 +98,18 @@ export const updateReferee = async (id: string, referee: Partial<Referee>): Prom
 
 export const deleteReferee = async (id: string): Promise<void> => {
   try {
+    const batch = writeBatch(db);
     const docRef = doc(refereesCollection, id);
-    await deleteDoc(docRef);
+
+    batch.delete(docRef);
+    await batch.commit();
   } catch (error) {
     console.error('Error deleting referee:', error);
     throw error;
   }
 };
 
-// Match operations
+// Match operations with optimized batch processing
 export const getMatches = async (): Promise<Match[]> => {
   try {
     const snapshot = await getDocs(matchesCollection);
@@ -129,10 +145,16 @@ export const getMatch = async (id: string): Promise<Match | null> => {
 
 export const createMatch = async (match: Omit<Match, 'id'>): Promise<Match> => {
   try {
-    const docRef = await addDoc(matchesCollection, {
+    const batch = writeBatch(db);
+    const docRef = doc(matchesCollection);
+    const newMatch = {
       ...match,
       date: Timestamp.fromDate(match.date)
-    });
+    };
+
+    batch.set(docRef, newMatch);
+    await batch.commit();
+
     return { id: docRef.id, ...match };
   } catch (error) {
     console.error('Error creating match:', error);
@@ -142,12 +164,16 @@ export const createMatch = async (match: Omit<Match, 'id'>): Promise<Match> => {
 
 export const updateMatch = async (id: string, match: Partial<Match>): Promise<void> => {
   try {
+    const batch = writeBatch(db);
     const docRef = doc(matchesCollection, id);
     const updateData = { ...match };
+
     if (match.date) {
       updateData.date = Timestamp.fromDate(match.date);
     }
-    await updateDoc(docRef, updateData);
+
+    batch.update(docRef, updateData);
+    await batch.commit();
   } catch (error) {
     console.error('Error updating match:', error);
     throw error;
@@ -156,8 +182,11 @@ export const updateMatch = async (id: string, match: Partial<Match>): Promise<vo
 
 export const deleteMatch = async (id: string): Promise<void> => {
   try {
+    const batch = writeBatch(db);
     const docRef = doc(matchesCollection, id);
-    await deleteDoc(docRef);
+
+    batch.delete(docRef);
+    await batch.commit();
   } catch (error) {
     console.error('Error deleting match:', error);
     throw error;
