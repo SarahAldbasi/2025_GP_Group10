@@ -27,22 +27,33 @@ export default function Referees() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Add error boundary for initial data load
   const { data: referees = [], isLoading, error } = useQuery({
     queryKey: ['referees'],
     queryFn: async () => {
       console.log('Fetching referees...');
-      const data = await getReferees();
-      console.log('Fetched referees:', data);
-      return data;
+      try {
+        const data = await getReferees();
+        console.log('Fetched referees:', data);
+        return data;
+      } catch (error) {
+        console.error('Error fetching referees:', error);
+        throw error;
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: Omit<Referee, 'id'>) => {
+    mutationFn: async (data: Omit<Referee, 'id'>) => {
       console.log('Creating referee with data:', data);
-      return createReferee(data);
+      try {
+        const result = await createReferee(data);
+        console.log('Create referee result:', result);
+        return result;
+      } catch (error) {
+        console.error('Error in createReferee:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       console.log('Referee created successfully:', data);
@@ -61,12 +72,18 @@ export default function Referees() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...data }: Referee) => {
+    mutationFn: async ({ id, ...data }: Referee) => {
       console.log('Updating referee:', id, data);
-      return updateReferee(id!, data);
+      try {
+        await updateReferee(id!, data);
+        return { id, ...data };
+      } catch (error) {
+        console.error('Error in updateReferee:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
-      console.log('Referee updated successfully');
+    onSuccess: (data) => {
+      console.log('Referee updated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       setSelectedReferee(null);
@@ -83,8 +100,18 @@ export default function Referees() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteReferee(id),
-    onSuccess: () => {
+    mutationFn: async (id: string) => {
+      console.log('Deleting referee:', id);
+      try {
+        await deleteReferee(id);
+        return id;
+      } catch (error) {
+        console.error('Error in deleteReferee:', error);
+        throw error;
+      }
+    },
+    onSuccess: (id) => {
+      console.log('Referee deleted successfully:', id);
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       toast({ title: 'Referee deleted successfully' });
     },
@@ -114,6 +141,11 @@ export default function Referees() {
       }
     } catch (error) {
       console.error('Error in form submission:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save referee. Please try again."
+      });
     }
   };
 
@@ -122,7 +154,6 @@ export default function Referees() {
     setSelectedReferee(null);
   };
 
-  // Handle initial loading error
   if (error) {
     console.error('Error loading referees:', error);
     return (
