@@ -12,7 +12,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import type { Referee } from '@/lib/firestore';
 
 const refereeSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -22,15 +21,16 @@ const refereeSchema = z.object({
   isAvailable: z.boolean().default(true)
 });
 
-type RefereeInput = z.infer<typeof refereeSchema>;
+type RefereeFormValues = z.infer<typeof refereeSchema>;
 
 interface RefereeFormProps {
-  onSubmit: (data: RefereeInput) => void;
-  defaultValues?: Partial<RefereeInput>;
+  onSubmit: (data: RefereeFormValues) => void;
+  defaultValues?: Partial<RefereeFormValues>;
+  isSubmitting?: boolean;
 }
 
-export default function RefereeForm({ onSubmit, defaultValues }: RefereeFormProps) {
-  const form = useForm<RefereeInput>({
+export default function RefereeForm({ onSubmit, defaultValues, isSubmitting }: RefereeFormProps) {
+  const form = useForm<RefereeFormValues>({
     resolver: zodResolver(refereeSchema),
     defaultValues: defaultValues || {
       firstName: '',
@@ -116,8 +116,12 @@ export default function RefereeForm({ onSubmit, defaultValues }: RefereeFormProp
           )}
         />
 
-        <Button type="submit" className="w-full bg-[#6ab100]">
-          Save Referee
+        <Button 
+          type="submit" 
+          className="w-full bg-[#6ab100]"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Saving...' : 'Save Referee'}
         </Button>
       </form>
     </Form>

@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -26,9 +27,10 @@ export default function Referees() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: referees, isLoading } = useQuery({
+  const { data: referees = [], isLoading } = useQuery({
     queryKey: ['referees'],
-    queryFn: getReferees
+    queryFn: getReferees,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const createMutation = useMutation({
@@ -39,6 +41,7 @@ export default function Referees() {
       toast({ title: 'Referee added successfully' });
     },
     onError: (error) => {
+      console.error('Create error:', error);
       toast({ 
         variant: "destructive",
         title: 'Error adding referee',
@@ -56,6 +59,7 @@ export default function Referees() {
       toast({ title: 'Referee updated successfully' });
     },
     onError: (error) => {
+      console.error('Update error:', error);
       toast({ 
         variant: "destructive",
         title: 'Error updating referee',
@@ -69,6 +73,14 @@ export default function Referees() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       toast({ title: 'Referee deleted successfully' });
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast({ 
+        variant: "destructive",
+        title: 'Error deleting referee',
+        description: 'Please try again later.'
+      });
     }
   });
 
@@ -94,7 +106,7 @@ export default function Referees() {
     return (
       <DashboardLayout>
         <div className="flex justify-center items-center h-[50vh]">
-          Loading...
+          <div className="text-lg text-gray-400">Loading referees...</div>
         </div>
       </DashboardLayout>
     );
@@ -122,6 +134,11 @@ export default function Referees() {
             onDelete={(id) => deleteMutation.mutate(id)}
           />
         ))}
+        {referees.length === 0 && (
+          <div className="col-span-full text-center py-8 text-gray-400">
+            No referees found. Add your first referee by clicking the "Add Referee" button.
+          </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={handleClose}>
@@ -130,10 +147,14 @@ export default function Referees() {
             <DialogTitle>
               {selectedReferee ? 'Edit Referee' : 'Add New Referee'}
             </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Fill in the referee's details below.
+            </DialogDescription>
           </DialogHeader>
           <RefereeForm
             onSubmit={handleSubmit}
             defaultValues={selectedReferee || undefined}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
           />
         </DialogContent>
       </Dialog>
