@@ -9,8 +9,6 @@ import {
   where,
   Timestamp,
   onSnapshot,
-  enableNetwork,
-  disableNetwork,
   type FirestoreError,
   writeBatch,
   getDoc
@@ -44,24 +42,15 @@ export interface Match {
 }
 
 // Error handling helper
-const handleFirestoreError = (error: unknown, operation: string) => {
-  const firestoreError = error as FirestoreError;
-  console.error(`Firestore ${operation} error:`, firestoreError);
-
-  if (firestoreError.code === 'unavailable') {
-    return enableNetwork(db);
-  }
-
-  throw firestoreError;
+const handleFirestoreError = (error: FirestoreError, operation: string) => {
+  console.error(`Firestore ${operation} error:`, error);
+  throw error;
 };
 
-// Network status management
-export const goOffline = () => disableNetwork(db);
-export const goOnline = () => enableNetwork(db);
-
-// Real-time referee subscription with error handling
+// Real-time referee subscription
 export const subscribeToReferees = (callback: (referees: Referee[]) => void) => {
   console.log('Setting up referees subscription...');
+
   return onSnapshot(
     refereesCollection, 
     (snapshot) => {
@@ -72,26 +61,21 @@ export const subscribeToReferees = (callback: (referees: Referee[]) => void) => 
       } as Referee));
       callback(referees);
     },
-    (error) => {
-      console.error('Referees subscription error:', error);
-      handleFirestoreError(error, 'subscription');
-    }
+    (error) => handleFirestoreError(error as FirestoreError, 'subscription')
   );
 };
 
-// Optimized referee operations
+// Referee operations
 export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
   try {
     console.log('Creating new referee:', referee);
-    const docRef = await addDoc(refereesCollection, {
-      ...referee,
-      createdAt: Timestamp.now()
-    });
+    const docRef = await addDoc(refereesCollection, referee);
     const newReferee = { id: docRef.id, ...referee };
     console.log('Successfully created referee:', newReferee);
     return newReferee;
   } catch (error) {
-    return handleFirestoreError(error, 'create referee');
+    handleFirestoreError(error as FirestoreError, 'create referee');
+    throw error; // TypeScript needs this for type inference
   }
 };
 
@@ -99,13 +83,10 @@ export const updateReferee = async (id: string, referee: Partial<Referee>): Prom
   try {
     console.log('Updating referee:', id, referee);
     const docRef = doc(refereesCollection, id);
-    await updateDoc(docRef, {
-      ...referee,
-      updatedAt: Timestamp.now()
-    });
+    await updateDoc(docRef, referee);
     console.log('Successfully updated referee:', id);
   } catch (error) {
-    return handleFirestoreError(error, 'update referee');
+    handleFirestoreError(error as FirestoreError, 'update referee');
   }
 };
 
@@ -116,7 +97,7 @@ export const deleteReferee = async (id: string): Promise<void> => {
     await deleteDoc(docRef);
     console.log('Successfully deleted referee:', id);
   } catch (error) {
-    return handleFirestoreError(error, 'delete referee');
+    handleFirestoreError(error as FirestoreError, 'delete referee');
   }
 };
 
@@ -131,7 +112,8 @@ export const getReferees = async (): Promise<Referee[]> => {
     console.log('Successfully fetched referees:', referees.length);
     return referees;
   } catch (error) {
-    return handleFirestoreError(error, 'get referees');
+    handleFirestoreError(error as FirestoreError, 'get referees');
+    return []; // Return empty array on error
   }
 };
 

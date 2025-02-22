@@ -1,6 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
+import { getDoc, doc } from "firebase/firestore";
+
 
 // Add error handling for missing environment variables
 const requiredEnvVars = [
@@ -32,16 +34,38 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
+// Initialize services
 const db = getFirestore(app);
-
-// Initialize Auth services
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Use local emulator in development
-if (import.meta.env.DEV) {
-  connectFirestoreEmulator(db, 'localhost', 8080);
+// Add basic error handling and retry logic.  This is a simplified example and
+// might need adjustments depending on the specific error scenarios and retry strategy.
+
+async function getFirestoreData(docPath: string) {
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      const docRef = doc(db, docPath);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data();
+      } else {
+        console.log("No such document!");
+        return null; // Or throw an error, depending on your needs
+      }
+    } catch (error) {
+      console.error("Firestore error:", error);
+      retries--;
+      if (retries > 0) {
+        console.log(`Retrying in 1 second... ${retries} retries left`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        throw new Error(`Failed to connect to Firestore after multiple retries: ${error}`);
+      }
+    }
+  }
 }
 
-export { app as default, auth, db, googleProvider };
+
+export { app as default, auth, db, googleProvider, getFirestoreData };
