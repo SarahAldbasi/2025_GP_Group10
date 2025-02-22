@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 // Add error handling for missing environment variables
 const requiredEnvVars = [
@@ -27,27 +27,12 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
+// Initialize Firebase with persistence settings
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
 
-// Enable offline persistence with better error handling
-try {
-  enableIndexedDbPersistence(db, {
-    synchronizeTabs: true
-  }).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time
-      console.warn('Firebase persistence is only enabled in one tab at a time');
-    } else if (err.code === 'unimplemented') {
-      // The current browser doesn't support persistence
-      console.warn('Current browser does not support persistence');
-    }
-  });
-} catch (error) {
-  console.error('Error enabling persistence:', error);
-}
+// Initialize Firestore with the new recommended settings
+const db = getFirestore(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 export { app as default, auth, db, googleProvider };

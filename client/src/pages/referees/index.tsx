@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import RefereeCard from '@/components/referees/RefereeCard';
@@ -30,22 +29,32 @@ export default function Referees() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Subscribe to real-time updates
     const unsubscribe = subscribeToReferees((updatedReferees) => {
       setReferees(updatedReferees);
       setIsLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
+  const handleClose = () => {
+    setIsDialogOpen(false);
+    setSelectedReferee(null);
+    setIsSubmitting(false);
+  };
+
+  const showSuccessToast = (message: string) => {
+    setTimeout(() => {
+      toast({ title: message });
+    }, 100);
+  };
+
   const handleCreate = async (data: Omit<Referee, 'id'>) => {
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
       await createReferee(data);
-      toast({ title: 'Referee added successfully' });
-      setIsDialogOpen(false);
+      handleClose();
+      showSuccessToast('Referee added successfully');
     } catch (error) {
       console.error('Error creating referee:', error);
       toast({ 
@@ -59,13 +68,12 @@ export default function Referees() {
   };
 
   const handleUpdate = async (data: Referee) => {
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
       const { id, ...updateData } = data;
       await updateReferee(id!, updateData);
-      toast({ title: 'Referee updated successfully' });
-      setIsDialogOpen(false);
-      setSelectedReferee(null);
+      handleClose();
+      showSuccessToast('Referee updated successfully');
     } catch (error) {
       console.error('Error updating referee:', error);
       toast({ 
@@ -81,7 +89,7 @@ export default function Referees() {
   const handleDelete = async (id: string) => {
     try {
       await deleteReferee(id);
-      toast({ title: 'Referee deleted successfully' });
+      showSuccessToast('Referee deleted successfully');
     } catch (error) {
       console.error('Error deleting referee:', error);
       toast({ 
@@ -103,11 +111,6 @@ export default function Referees() {
   const handleEdit = (referee: Referee) => {
     setSelectedReferee(referee);
     setIsDialogOpen(true);
-  };
-
-  const handleClose = () => {
-    setIsDialogOpen(false);
-    setSelectedReferee(null);
   };
 
   return (
