@@ -34,7 +34,13 @@ export default function Referees() {
 
   const createMutation = useMutation({
     mutationFn: createReferee,
-    onSuccess: () => {
+    onMutate: () => {
+      // Show immediate feedback
+      toast({ title: 'Adding referee...' });
+    },
+    onSuccess: (newReferee) => {
+      // Optimistically update the UI
+      queryClient.setQueryData(['referees'], (old: Referee[] = []) => [...old, newReferee]);
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       toast({ title: 'Referee added successfully' });
@@ -46,6 +52,10 @@ export default function Referees() {
         title: 'Error adding referee',
         description: 'Please try again later.'
       });
+    },
+    onSettled: () => {
+      // Ensure form resets whether success or error
+      setIsDialogOpen(false);
     }
   });
 
@@ -55,7 +65,14 @@ export default function Referees() {
       await updateReferee(id!, updateData);
       return data;
     },
-    onSuccess: () => {
+    onMutate: () => {
+      toast({ title: 'Updating referee...' });
+    },
+    onSuccess: (updatedReferee) => {
+      // Optimistically update the UI
+      queryClient.setQueryData(['referees'], (old: Referee[] = []) => 
+        old.map(ref => ref.id === updatedReferee.id ? updatedReferee : ref)
+      );
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       setSelectedReferee(null);
@@ -68,11 +85,22 @@ export default function Referees() {
         title: 'Error updating referee',
         description: 'Please try again later.'
       });
+    },
+    onSettled: () => {
+      setIsDialogOpen(false);
+      setSelectedReferee(null);
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteReferee,
+    onMutate: (id) => {
+      // Optimistically remove from UI
+      queryClient.setQueryData(['referees'], (old: Referee[] = []) => 
+        old.filter(ref => ref.id !== id)
+      );
+      toast({ title: 'Deleting referee...' });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       toast({ title: 'Referee deleted successfully' });
@@ -84,6 +112,8 @@ export default function Referees() {
         title: 'Error deleting referee',
         description: 'Please try again later.'
       });
+      // Revert optimistic update
+      queryClient.invalidateQueries({ queryKey: ['referees'] });
     }
   });
 
@@ -93,10 +123,15 @@ export default function Referees() {
   };
 
   const handleSubmit = async (data: Omit<Referee, 'id'>) => {
-    if (selectedReferee) {
-      await updateMutation.mutateAsync({ ...data, id: selectedReferee.id! });
-    } else {
-      await createMutation.mutateAsync(data);
+    try {
+      if (selectedReferee) {
+        await updateMutation.mutateAsync({ ...data, id: selectedReferee.id! });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
+    } catch (error) {
+      // Error handling is done in mutation callbacks
+      console.error('Form submission error:', error);
     }
   };
 
