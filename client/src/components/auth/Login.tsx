@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { SiGoogle } from 'react-icons/si';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -23,6 +24,19 @@ export default function Login() {
         variant: "destructive",
         title: "Error",
         description: "Invalid email or password"
+      });
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      setLocation('/dashboard');
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to sign in with Google"
       });
     }
   };
@@ -65,8 +79,18 @@ export default function Login() {
             </Button>
           </form>
 
+          <div className="mt-6 text-center">
+            <p className="text-[#787878] mb-4">or login with</p>
+            <button
+              onClick={handleGoogleSignIn}
+              className="w-12 h-12 rounded-full bg-[#2b2b2b] flex items-center justify-center hover:bg-[#3b3b3b] transition-colors"
+            >
+              <SiGoogle className="w-5 h-5 text-white" />
+            </button>
+          </div>
+
           <Link href="/signup">
-            <span className="block text-center mt-4 text-[#787878] cursor-pointer">
+            <span className="block text-center mt-6 text-[#787878] cursor-pointer">
               Don't have an account? <span className="text-[#6ab100]">Sign up</span>
             </span>
           </Link>

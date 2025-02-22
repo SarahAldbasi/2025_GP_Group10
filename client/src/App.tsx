@@ -9,9 +9,11 @@ import { Toaster } from "@/components/ui/toaster";
 // Pages
 import Login from "@/components/auth/Login";
 import Signup from "@/components/auth/Signup";
+import ForgotPassword from "@/pages/forgot-password";
 import Dashboard from "@/pages/dashboard";
 import Matches from "@/pages/matches";
 import Referees from "@/pages/referees";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 function PrivateRoute({ component: Component }: { component: React.ComponentType }) {
@@ -39,9 +41,11 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/dashboard" component={() => <PrivateRoute component={Dashboard} />} />
       <Route path="/matches" component={() => <PrivateRoute component={Matches} />} />
       <Route path="/referees" component={() => <PrivateRoute component={Referees} />} />
+      <Route path="/profile" component={() => <PrivateRoute component={Profile} />} />
       <Route path="/" component={() => <PrivateRoute component={Dashboard} />} />
       <Route component={NotFound} />
     </Switch>
