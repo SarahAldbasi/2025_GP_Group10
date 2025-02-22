@@ -20,30 +20,30 @@ export default function Sidebar() {
 
       <nav className="flex-1">
         <Link href="/dashboard">
-          <a className={`flex items-center p-3 rounded-lg mb-2 ${
+          <div className={`flex items-center p-3 rounded-lg mb-2 cursor-pointer ${
             isActive('/dashboard') ? 'bg-[#6ab100]' : 'hover:bg-[#2b2b2b]'
           }`}>
             <Home className="mr-3" />
             Dashboard
-          </a>
+          </div>
         </Link>
 
         <Link href="/matches">
-          <a className={`flex items-center p-3 rounded-lg mb-2 ${
+          <div className={`flex items-center p-3 rounded-lg mb-2 cursor-pointer ${
             isActive('/matches') ? 'bg-[#6ab100]' : 'hover:bg-[#2b2b2b]'
           }`}>
             <Calendar className="mr-3" />
             Matches
-          </a>
+          </div>
         </Link>
 
         <Link href="/referees">
-          <a className={`flex items-center p-3 rounded-lg mb-2 ${
+          <div className={`flex items-center p-3 rounded-lg mb-2 cursor-pointer ${
             isActive('/referees') ? 'bg-[#6ab100]' : 'hover:bg-[#2b2b2b]'
           }`}>
             <Users className="mr-3" />
             Referees
-          </a>
+          </div>
         </Link>
       </nav>
 
