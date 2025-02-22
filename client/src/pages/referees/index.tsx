@@ -32,17 +32,31 @@ export default function Referees() {
       queryClient.invalidateQueries({ queryKey: ['/api/referees'] });
       setIsDialogOpen(false);
       toast({ title: 'Referee added successfully' });
+    },
+    onError: (error) => {
+      toast({ 
+        variant: "destructive",
+        title: 'Error adding referee',
+        description: 'Please check all fields are filled correctly.'
+      });
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: (referee: Referee) =>
+    mutationFn: (referee: Partial<Referee> & { id: number }) =>
       apiRequest('PATCH', `/api/referees/${referee.id}`, referee),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/referees'] });
       setIsDialogOpen(false);
       setSelectedReferee(null);
       toast({ title: 'Referee updated successfully' });
+    },
+    onError: (error) => {
+      toast({ 
+        variant: "destructive",
+        title: 'Error updating referee',
+        description: 'Please check all fields are filled correctly.'
+      });
     }
   });
 
@@ -62,14 +76,29 @@ export default function Referees() {
 
   const handleSubmit = (data: InsertReferee) => {
     if (selectedReferee) {
-      updateMutation.mutate({ ...data, id: selectedReferee.id });
+      updateMutation.mutate({ 
+        ...data, 
+        id: selectedReferee.id,
+        isAvailable: data.isAvailable ?? true
+      });
     } else {
       createMutation.mutate(data);
     }
   };
 
+  const handleClose = () => {
+    setIsDialogOpen(false);
+    setSelectedReferee(null);
+  };
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-[50vh]">
+          Loading...
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
@@ -96,7 +125,7 @@ export default function Referees() {
         ))}
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleClose}>
         <DialogContent className="bg-[#212121] text-white">
           <DialogHeader>
             <DialogTitle>

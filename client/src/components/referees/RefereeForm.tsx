@@ -22,7 +22,8 @@ export default function RefereeForm({ onSubmit, defaultValues }: RefereeFormProp
   const form = useForm<InsertReferee>({
     resolver: zodResolver(insertRefereeSchema),
     defaultValues: defaultValues || {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       phone: '',
       isAvailable: true
@@ -34,10 +35,24 @@ export default function RefereeForm({ onSubmit, defaultValues }: RefereeFormProp
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="name"
+          name="firstName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>First Name</FormLabel>
+              <FormControl>
+                <Input {...field} className="bg-[#2b2b2b] text-white border-0" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="lastName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Last Name</FormLabel>
               <FormControl>
                 <Input {...field} className="bg-[#2b2b2b] text-white border-0" />
               </FormControl>
@@ -67,7 +82,7 @@ export default function RefereeForm({ onSubmit, defaultValues }: RefereeFormProp
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input {...field} type="tel" className="bg-[#2b2b2b] text-white border-0" />
+                <Input {...field} type="tel" placeholder="05XXXXXXXX" className="bg-[#2b2b2b] text-white border-0" />
               </FormControl>
               <FormMessage />
             </FormItem>
