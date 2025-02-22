@@ -59,9 +59,9 @@ export default function Login() {
           </form>
 
           <Link href="/signup">
-            <a className="block text-center mt-4 text-[#787878]">
+            <span className="block text-center mt-4 text-[#787878] cursor-pointer">
               Don't have an account? <span className="text-[#6ab100]">Sign up</span>
-            </a>
+            </span>
           </Link>
         </CardContent>
       </Card>

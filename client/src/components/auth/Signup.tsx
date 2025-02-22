@@ -68,9 +68,9 @@ export default function Signup() {
           </form>
 
           <Link href="/login">
-            <a className="block text-center mt-4 text-[#787878]">
+            <span className="block text-center mt-4 text-[#787878] cursor-pointer">
               Already have an account? <span className="text-[#6ab100]">Log in</span>
-            </a>
+            </span>
           </Link>
         </CardContent>
       </Card>
