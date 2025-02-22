@@ -27,36 +27,14 @@ export default function Referees() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: referees = [], isLoading, error } = useQuery({
+  const { data: referees = [], isLoading } = useQuery({
     queryKey: ['referees'],
-    queryFn: async () => {
-      console.log('Fetching referees...');
-      try {
-        const data = await getReferees();
-        console.log('Fetched referees:', data);
-        return data;
-      } catch (error) {
-        console.error('Error fetching referees:', error);
-        throw error;
-      }
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    queryFn: getReferees,
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<Referee, 'id'>) => {
-      console.log('Creating referee with data:', data);
-      try {
-        const result = await createReferee(data);
-        console.log('Create referee result:', result);
-        return result;
-      } catch (error) {
-        console.error('Error in createReferee:', error);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      console.log('Referee created successfully:', data);
+    mutationFn: createReferee,
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       toast({ title: 'Referee added successfully' });
@@ -66,24 +44,18 @@ export default function Referees() {
       toast({ 
         variant: "destructive",
         title: 'Error adding referee',
-        description: 'Please check all fields are filled correctly.'
+        description: 'Please try again later.'
       });
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...data }: Referee) => {
-      console.log('Updating referee:', id, data);
-      try {
-        await updateReferee(id!, data);
-        return { id, ...data };
-      } catch (error) {
-        console.error('Error in updateReferee:', error);
-        throw error;
-      }
+    mutationFn: async (data: Referee) => {
+      const { id, ...updateData } = data;
+      await updateReferee(id!, updateData);
+      return data;
     },
-    onSuccess: (data) => {
-      console.log('Referee updated successfully:', data);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       setSelectedReferee(null);
@@ -94,24 +66,14 @@ export default function Referees() {
       toast({ 
         variant: "destructive",
         title: 'Error updating referee',
-        description: 'Please check all fields are filled correctly.'
+        description: 'Please try again later.'
       });
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      console.log('Deleting referee:', id);
-      try {
-        await deleteReferee(id);
-        return id;
-      } catch (error) {
-        console.error('Error in deleteReferee:', error);
-        throw error;
-      }
-    },
-    onSuccess: (id) => {
-      console.log('Referee deleted successfully:', id);
+    mutationFn: deleteReferee,
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referees'] });
       toast({ title: 'Referee deleted successfully' });
     },
@@ -126,26 +88,15 @@ export default function Referees() {
   });
 
   const handleEdit = (referee: Referee) => {
-    console.log('Editing referee:', referee);
     setSelectedReferee(referee);
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async (data: Omit<Referee, 'id'>) => {
-    console.log('Form submitted with data:', data);
-    try {
-      if (selectedReferee) {
-        await updateMutation.mutateAsync({ ...data, id: selectedReferee.id! });
-      } else {
-        await createMutation.mutateAsync(data);
-      }
-    } catch (error) {
-      console.error('Error in form submission:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save referee. Please try again."
-      });
+    if (selectedReferee) {
+      await updateMutation.mutateAsync({ ...data, id: selectedReferee.id! });
+    } else {
+      await createMutation.mutateAsync(data);
     }
   };
 
@@ -153,27 +104,6 @@ export default function Referees() {
     setIsDialogOpen(false);
     setSelectedReferee(null);
   };
-
-  if (error) {
-    console.error('Error loading referees:', error);
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-[50vh]">
-          <div className="text-lg text-red-500">Error loading referees. Please try again later.</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-[50vh]">
-          <div className="text-lg text-gray-400">Loading referees...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout>
@@ -188,21 +118,27 @@ export default function Referees() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {referees?.map((referee) => (
-          <RefereeCard
-            key={referee.id}
-            referee={referee}
-            onEdit={handleEdit}
-            onDelete={(id) => deleteMutation.mutate(id)}
-          />
-        ))}
-        {referees.length === 0 && (
-          <div className="col-span-full text-center py-8 text-gray-400">
-            No referees found. Add your first referee by clicking the "Add Referee" button.
-          </div>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-[50vh]">
+          <div className="text-lg text-gray-400">Loading referees...</div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {referees.map((referee) => (
+            <RefereeCard
+              key={referee.id}
+              referee={referee}
+              onEdit={handleEdit}
+              onDelete={(id) => deleteMutation.mutate(id)}
+            />
+          ))}
+          {referees.length === 0 && (
+            <div className="col-span-full text-center py-8 text-gray-400">
+              No referees found. Add your first referee by clicking the "Add Referee" button.
+            </div>
+          )}
+        </div>
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={handleClose}>
         <DialogContent className="bg-[#212121] text-white">
