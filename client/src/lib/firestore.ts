@@ -41,50 +41,75 @@ export interface Match {
   assistantReferee2?: string | null;
 }
 
-// Error handling helper
+// Error handling helper with detailed logging
 const handleFirestoreError = (error: FirestoreError, operation: string) => {
-  console.error(`Firestore ${operation} error:`, error);
+  console.error(`Firestore ${operation} error:`, {
+    code: error.code,
+    message: error.message,
+    details: error,
+    timestamp: new Date().toISOString()
+  });
   throw error;
 };
 
-// Real-time referee subscription
+// Real-time referee subscription with detailed logging
 export const subscribeToReferees = (callback: (referees: Referee[]) => void) => {
-  console.log('Setting up referees subscription...');
+  console.log('Setting up referees subscription...', {
+    collection: 'referees',
+    timestamp: new Date().toISOString()
+  });
 
   return onSnapshot(
     refereesCollection, 
     (snapshot) => {
-      console.log('Received referees update:', snapshot.docs.length, 'referees');
+      console.log('Received referees update:', {
+        count: snapshot.docs.length,
+        timestamp: new Date().toISOString(),
+        metadata: snapshot.metadata
+      });
       const referees = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Referee));
       callback(referees);
     },
-    (error) => handleFirestoreError(error as FirestoreError, 'subscription')
+    (error) => {
+      console.error('Referees subscription error:', {
+        code: error.code,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+      handleFirestoreError(error as FirestoreError, 'subscription');
+    }
   );
 };
 
-// Referee operations
+// Referee operations with detailed logging
 export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
   try {
-    console.log('Creating new referee:', referee);
+    console.log('Creating new referee:', {
+      data: referee,
+      timestamp: new Date().toISOString()
+    });
     const docRef = await addDoc(refereesCollection, referee);
     const newReferee = { id: docRef.id, ...referee };
-    console.log('Successfully created referee:', newReferee);
+    console.log('Successfully created referee:', {
+      id: docRef.id,
+      timestamp: new Date().toISOString()
+    });
     return newReferee;
   } catch (error) {
     handleFirestoreError(error as FirestoreError, 'create referee');
-    throw error; // TypeScript needs this for type inference
+    throw error;
   }
 };
 
 export const updateReferee = async (id: string, referee: Partial<Referee>): Promise<void> => {
   try {
-    console.log('Updating referee:', id, referee);
+    console.log('Updating referee:', { id, data: referee, timestamp: new Date().toISOString() });
     const docRef = doc(refereesCollection, id);
     await updateDoc(docRef, referee);
-    console.log('Successfully updated referee:', id);
+    console.log('Successfully updated referee:', { id, timestamp: new Date().toISOString() });
   } catch (error) {
     handleFirestoreError(error as FirestoreError, 'update referee');
   }
@@ -92,10 +117,10 @@ export const updateReferee = async (id: string, referee: Partial<Referee>): Prom
 
 export const deleteReferee = async (id: string): Promise<void> => {
   try {
-    console.log('Deleting referee:', id);
+    console.log('Deleting referee:', { id, timestamp: new Date().toISOString() });
     const docRef = doc(refereesCollection, id);
     await deleteDoc(docRef);
-    console.log('Successfully deleted referee:', id);
+    console.log('Successfully deleted referee:', { id, timestamp: new Date().toISOString() });
   } catch (error) {
     handleFirestoreError(error as FirestoreError, 'delete referee');
   }
@@ -103,21 +128,21 @@ export const deleteReferee = async (id: string): Promise<void> => {
 
 export const getReferees = async (): Promise<Referee[]> => {
   try {
-    console.log('Fetching all referees...');
+    console.log('Fetching all referees...', { timestamp: new Date().toISOString() });
     const snapshot = await getDocs(refereesCollection);
     const referees = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Referee));
-    console.log('Successfully fetched referees:', referees.length);
+    console.log('Successfully fetched referees:', { count: referees.length, timestamp: new Date().toISOString() });
     return referees;
   } catch (error) {
     handleFirestoreError(error as FirestoreError, 'get referees');
-    return []; // Return empty array on error
+    return []; 
   }
 };
 
-// Referee operations with optimized batching (from original, not modified in edited snippet)
+// Referee operations with optimized batching 
 export const getMatches = async (): Promise<Match[]> => {
   try {
     const snapshot = await getDocs(matchesCollection);
@@ -127,14 +152,15 @@ export const getMatches = async (): Promise<Match[]> => {
       date: (doc.data().date as Timestamp).toDate() 
     } as Match));
   } catch (error) {
-    console.error('Error getting matches:', error);
+    console.error('Error getting matches:', {error, timestamp: new Date().toISOString()});
     throw error;
   }
 };
 
-//Match Operations (from original, not modified in edited snippet)
+//Match Operations
 export const getMatch = async (id: string): Promise<Match | null> => {
   try {
+    console.log('Fetching match...', {id, timestamp: new Date().toISOString()});
     const docRef = doc(matchesCollection, id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -145,15 +171,17 @@ export const getMatch = async (id: string): Promise<Match | null> => {
         date: (data.date as Timestamp).toDate()
       } as Match;
     }
+    console.log('Match not found', {id, timestamp: new Date().toISOString()});
     return null;
   } catch (error) {
-    console.error('Error getting match:', error);
+    console.error('Error getting match:', {error, timestamp: new Date().toISOString()});
     throw error;
   }
 };
 
 export const createMatch = async (match: Omit<Match, 'id'>): Promise<Match> => {
   try {
+    console.log('Creating new match:', {data: match, timestamp: new Date().toISOString()});
     const batch = writeBatch(db);
     const docRef = doc(matchesCollection);
     const newMatch = {
@@ -166,13 +194,14 @@ export const createMatch = async (match: Omit<Match, 'id'>): Promise<Match> => {
 
     return { id: docRef.id, ...match };
   } catch (error) {
-    console.error('Error creating match:', error);
+    console.error('Error creating match:', {error, timestamp: new Date().toISOString()});
     throw error;
   }
 };
 
 export const updateMatch = async (id: string, match: Partial<Match>): Promise<void> => {
   try {
+    console.log('Updating match:', {id, data: match, timestamp: new Date().toISOString()});
     const batch = writeBatch(db);
     const docRef = doc(matchesCollection, id);
     const updateData = { ...match };
@@ -184,20 +213,21 @@ export const updateMatch = async (id: string, match: Partial<Match>): Promise<vo
     batch.update(docRef, updateData);
     await batch.commit();
   } catch (error) {
-    console.error('Error updating match:', error);
+    console.error('Error updating match:', {error, timestamp: new Date().toISOString()});
     throw error;
   }
 };
 
 export const deleteMatch = async (id: string): Promise<void> => {
   try {
+    console.log('Deleting match:', {id, timestamp: new Date().toISOString()});
     const batch = writeBatch(db);
     const docRef = doc(matchesCollection, id);
 
     batch.delete(docRef);
     await batch.commit();
   } catch (error) {
-    console.error('Error deleting match:', error);
+    console.error('Error deleting match:', {error, timestamp: new Date().toISOString()});
     throw error;
   }
 };

@@ -1,8 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getDoc, doc } from "firebase/firestore";
-
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 // Add error handling for missing environment variables
 const requiredEnvVars = [
@@ -22,6 +20,9 @@ if (missingVars.length > 0) {
   );
 }
 
+// Log Firebase configuration (without sensitive data)
+console.log('Initializing Firebase with project:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
@@ -32,40 +33,32 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+console.log('Initializing Firebase app...');
 const app = initializeApp(firebaseConfig);
 
 // Initialize services
+console.log('Initializing Firestore...');
 const db = getFirestore(app);
+
+// Initialize Auth services
+console.log('Initializing Auth...');
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Add basic error handling and retry logic.  This is a simplified example and
-// might need adjustments depending on the specific error scenarios and retry strategy.
-
-async function getFirestoreData(docPath: string) {
-  let retries = 3;
-  while (retries > 0) {
-    try {
-      const docRef = doc(db, docPath);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return docSnap.data();
-      } else {
-        console.log("No such document!");
-        return null; // Or throw an error, depending on your needs
-      }
-    } catch (error) {
-      console.error("Firestore error:", error);
-      retries--;
-      if (retries > 0) {
-        console.log(`Retrying in 1 second... ${retries} retries left`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } else {
-        throw new Error(`Failed to connect to Firestore after multiple retries: ${error}`);
-      }
+// Enable offline persistence with detailed error logging
+console.log('Enabling Firestore persistence...');
+enableIndexedDbPersistence(db)
+  .then(() => {
+    console.log('Firestore persistence enabled successfully');
+  })
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('The current browser doesn\'t support offline persistence');
+    } else {
+      console.error('Error enabling persistence:', err);
     }
-  }
-}
+  });
 
-
-export { app as default, auth, db, googleProvider, getFirestoreData };
+export { app as default, auth, db, googleProvider };
