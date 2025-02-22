@@ -1,10 +1,9 @@
 import { Route, Switch } from "wouter";
-import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/lib/useAuth";
+import { useAuth } from "@/lib/useAuth"; // Added import for useAuth
 
 // Pages
 import Login from "@/components/auth/Login";
@@ -17,17 +16,7 @@ import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 function PrivateRoute({ component: Component }: { component: React.ComponentType }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { user, loading } = useAuth();
 
   if (loading) {
     return <div className="min-h-screen bg-[#171717] text-white flex items-center justify-center">Loading...</div>;
@@ -54,9 +43,11 @@ function Router() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router />
+        <Toaster />
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }

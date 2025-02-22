@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
+import { useAuth } from '@/lib/useAuth'; 
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import RefereeCard from '@/components/referees/RefereeCard';
 import RefereeForm from '@/components/referees/RefereeForm';
@@ -27,15 +28,23 @@ export default function Referees() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth(); 
 
   useEffect(() => {
+    if (!user) {
+      setReferees([]);
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('Setting up referees subscription with auth user:', user.uid);
     const unsubscribe = subscribeToReferees((updatedReferees) => {
       setReferees(updatedReferees);
       setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]); 
 
   const handleClose = () => {
     setIsDialogOpen(false);
@@ -50,6 +59,15 @@ export default function Referees() {
   };
 
   const handleCreate = async (data: Omit<Referee, 'id'>) => {
+    if (!user) {
+      toast({ 
+        variant: "destructive",
+        title: 'Authentication required',
+        description: 'Please sign in to perform this action.'
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await createReferee(data);
@@ -68,6 +86,15 @@ export default function Referees() {
   };
 
   const handleUpdate = async (data: Referee) => {
+    if (!user) {
+      toast({ 
+        variant: "destructive",
+        title: 'Authentication required',
+        description: 'Please sign in to perform this action.'
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const { id, ...updateData } = data;
@@ -87,6 +114,15 @@ export default function Referees() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!user) {
+      toast({ 
+        variant: "destructive",
+        title: 'Authentication required',
+        description: 'Please sign in to perform this action.'
+      });
+      return;
+    }
+
     try {
       await deleteReferee(id);
       showSuccessToast('Referee deleted successfully');
@@ -112,6 +148,16 @@ export default function Referees() {
     setSelectedReferee(referee);
     setIsDialogOpen(true);
   };
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-[50vh]">
+          <div className="text-lg text-gray-400">Please sign in to view and manage referees.</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
