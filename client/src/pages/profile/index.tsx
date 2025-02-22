@@ -12,8 +12,17 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const user = auth.currentUser;
+  const [editMode, setEditMode] = useState(false);
 
-  const [name, setName] = useState(user?.displayName || '');
+  // Split display name into first and last name
+  const [firstName, setFirstName] = useState(() => {
+    const names = user?.displayName?.split(' ') || ['', ''];
+    return names[0] || '';
+  });
+  const [lastName, setLastName] = useState(() => {
+    const names = user?.displayName?.split(' ') || ['', ''];
+    return names[1] || '';
+  });
   const [email, setEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -23,9 +32,10 @@ export default function Profile() {
     e.preventDefault();
     try {
       if (user) {
-        // Update display name
-        if (name !== user.displayName) {
-          await updateProfile(user, { displayName: name });
+        // Update display name (combining first and last name)
+        const fullName = `${firstName} ${lastName}`.trim();
+        if (fullName !== user.displayName) {
+          await updateProfile(user, { displayName: fullName });
         }
 
         // Update email
@@ -38,6 +48,7 @@ export default function Profile() {
           await updatePassword(user, newPassword);
         }
 
+        setEditMode(false);
         toast({
           title: "Success",
           description: "Profile updated successfully"
@@ -59,61 +70,111 @@ export default function Profile() {
 
         <Card className="bg-[#212121]">
           <CardHeader>
-            <CardTitle>Edit Profile</CardTitle>
+            <CardTitle className="flex justify-between items-center">
+              <span>Profile Information</span>
+              {!editMode && (
+                <Button onClick={() => setEditMode(true)} variant="outline">
+                  Edit Profile
+                </Button>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-400">Name</label>
-                <Input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="bg-[#2b2b2b] border-0 text-white"
-                />
-              </div>
+            {editMode ? (
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-400">First Name</label>
+                    <Input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="bg-[#2b2b2b] border-0 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400">Last Name</label>
+                    <Input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="bg-[#2b2b2b] border-0 text-white"
+                    />
+                  </div>
+                </div>
 
-              <div>
-                <label className="text-sm text-gray-400">Email</label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-[#2b2b2b] border-0 text-white"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-[#2b2b2b]">
-                <h3 className="text-lg font-medium mb-4">Change Password</h3>
-                <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-400">Email</label>
                   <Input
-                    type="password"
-                    placeholder="Current Password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="bg-[#2b2b2b] border-0 text-white"
-                  />
-                  <Input
-                    type="password"
-                    placeholder="New Password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="bg-[#2b2b2b] border-0 text-white"
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Confirm New Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="bg-[#2b2b2b] border-0 text-white"
                   />
                 </div>
-              </div>
 
-              <Button type="submit" className="w-full bg-[#6ab100]">
-                Save Changes
-              </Button>
-            </form>
+                <div className="pt-4 border-t border-[#2b2b2b]">
+                  <h3 className="text-lg font-medium mb-4">Change Password</h3>
+                  <div className="space-y-4">
+                    <Input
+                      type="password"
+                      placeholder="Current Password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="bg-[#2b2b2b] border-0 text-white"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="bg-[#2b2b2b] border-0 text-white"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Confirm New Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="bg-[#2b2b2b] border-0 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <Button 
+                    type="submit" 
+                    className="flex-1 bg-[#6ab100]"
+                  >
+                    Save Changes
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setEditMode(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-400">First Name</label>
+                    <p className="text-white">{firstName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400">Last Name</label>
+                    <p className="text-white">{lastName}</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">Email</label>
+                  <p className="text-white">{email}</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
