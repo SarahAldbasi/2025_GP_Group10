@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { insertRefereeSchema, type InsertReferee } from '@shared/schema';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -12,15 +12,26 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import type { Referee } from '@/lib/firestore';
+
+const refereeSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().regex(/^05\d{8}$/, "Phone number must be 10 digits and start with 05"),
+  isAvailable: z.boolean().default(true)
+});
+
+type RefereeInput = z.infer<typeof refereeSchema>;
 
 interface RefereeFormProps {
-  onSubmit: (data: InsertReferee) => void;
-  defaultValues?: Partial<InsertReferee>;
+  onSubmit: (data: RefereeInput) => void;
+  defaultValues?: Partial<RefereeInput>;
 }
 
 export default function RefereeForm({ onSubmit, defaultValues }: RefereeFormProps) {
-  const form = useForm<InsertReferee>({
-    resolver: zodResolver(insertRefereeSchema),
+  const form = useForm<RefereeInput>({
+    resolver: zodResolver(refereeSchema),
     defaultValues: defaultValues || {
       firstName: '',
       lastName: '',

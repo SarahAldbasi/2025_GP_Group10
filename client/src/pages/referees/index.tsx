@@ -12,8 +12,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import type { Referee, InsertReferee } from '@shared/schema';
+import { 
+  getReferees, 
+  createReferee, 
+  updateReferee, 
+  deleteReferee,
+  type Referee 
+} from '@/lib/firestore';
 
 export default function Referees() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -21,15 +26,15 @@ export default function Referees() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: referees, isLoading } = useQuery<Referee[]>({
-    queryKey: ['/api/referees']
+  const { data: referees, isLoading } = useQuery({
+    queryKey: ['referees'],
+    queryFn: getReferees
   });
 
   const createMutation = useMutation({
-    mutationFn: (referee: InsertReferee) =>
-      apiRequest('POST', '/api/referees', referee),
+    mutationFn: createReferee,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/referees'] });
+      queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       toast({ title: 'Referee added successfully' });
     },
@@ -43,10 +48,9 @@ export default function Referees() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (referee: Partial<Referee> & { id: number }) =>
-      apiRequest('PATCH', `/api/referees/${referee.id}`, referee),
+    mutationFn: ({ id, ...data }: Referee) => updateReferee(id!, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/referees'] });
+      queryClient.invalidateQueries({ queryKey: ['referees'] });
       setIsDialogOpen(false);
       setSelectedReferee(null);
       toast({ title: 'Referee updated successfully' });
@@ -61,10 +65,9 @@ export default function Referees() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
-      apiRequest('DELETE', `/api/referees/${id}`),
+    mutationFn: (id: string) => deleteReferee(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/referees'] });
+      queryClient.invalidateQueries({ queryKey: ['referees'] });
       toast({ title: 'Referee deleted successfully' });
     }
   });
@@ -74,13 +77,9 @@ export default function Referees() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (data: InsertReferee) => {
+  const handleSubmit = (data: Omit<Referee, 'id'>) => {
     if (selectedReferee) {
-      updateMutation.mutate({ 
-        ...data, 
-        id: selectedReferee.id,
-        isAvailable: data.isAvailable ?? true
-      });
+      updateMutation.mutate({ ...data, id: selectedReferee.id! });
     } else {
       createMutation.mutate(data);
     }

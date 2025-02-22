@@ -1,12 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Referee } from '@shared/schema';
 import { User, Mail, Phone } from 'lucide-react';
+import type { Referee } from '@/lib/firestore';
 
 interface RefereeCardProps {
   referee: Referee;
   onEdit: (referee: Referee) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
 export default function RefereeCard({ referee, onEdit, onDelete }: RefereeCardProps) {
@@ -46,7 +46,7 @@ export default function RefereeCard({ referee, onEdit, onDelete }: RefereeCardPr
           </Button>
           <Button
             variant="destructive"
-            onClick={() => onDelete(referee.id)}
+            onClick={() => referee.id && onDelete(referee.id)}
             className="flex-1"
           >
             Delete
