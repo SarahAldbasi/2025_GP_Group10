@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/useAuth';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import RefereeCard from '@/components/referees/RefereeCard';
 import RefereeForm from '@/components/referees/RefereeForm';
+import VerificationRequests from '@/components/referees/VerificationRequests';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -69,7 +70,7 @@ export default function Referees() {
     }, 100);
   };
 
-  const handleCreate = async (data: Omit<Referee, 'id'>) => {
+  const handleCreate = async (data: Omit<Referee, 'id' | 'verificationStatus'>) => {
     if (!user) {
       toast({ 
         variant: "destructive",
@@ -81,7 +82,10 @@ export default function Referees() {
 
     try {
       setIsSubmitting(true);
-      await createReferee(data);
+      await createReferee({
+        ...data,
+        verificationStatus: 'pending'
+      });
       handleClose();
       showSuccessToast('Referee added successfully');
     } catch (error) {
@@ -148,9 +152,9 @@ export default function Referees() {
     }
   };
 
-  const handleSubmit = async (data: Omit<Referee, 'id'>) => {
+  const handleSubmit = async (data: Omit<Referee, 'id' | 'verificationStatus'>) => {
     if (selectedReferee) {
-      await handleUpdate({ ...data, id: selectedReferee.id! });
+      await handleUpdate({ ...data, id: selectedReferee.id!, verificationStatus: selectedReferee.verificationStatus });
     } else {
       await handleCreate(data);
     }
@@ -173,81 +177,87 @@ export default function Referees() {
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Referees</h1>
-        <Button
-          onClick={() => setIsDialogOpen(true)}
-          className="bg-[#6ab100]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Referee
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center h-[50vh]">
-          <div className="text-lg text-gray-400">Loading referees...</div>
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Referees</h1>
+          <Button
+            onClick={() => setIsDialogOpen(true)}
+            className="bg-[#6ab100]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Referee
+          </Button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {referees.map((referee) => (
-            <RefereeCard
-              key={referee.id}
-              referee={referee}
-              onEdit={handleEdit}
-              onDelete={() => setRefereeToDelete(referee)}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[50vh]">
+            <div className="text-lg text-gray-400">Loading referees...</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {referees.map((referee) => (
+              <RefereeCard
+                key={referee.id}
+                referee={referee}
+                onEdit={handleEdit}
+                onDelete={() => setRefereeToDelete(referee)}
+              />
+            ))}
+            {referees.length === 0 && (
+              <div className="col-span-full text-center py-8 text-gray-400">
+                No referees found. Add your first referee by clicking the "Add Referee" button.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-12">
+          <VerificationRequests />
+        </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={handleClose}>
+          <DialogContent className="bg-[#212121] text-white">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedReferee ? 'Edit Referee' : 'Add New Referee'}
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Fill in the referee's details below.
+              </DialogDescription>
+            </DialogHeader>
+            <RefereeForm
+              onSubmit={handleSubmit}
+              defaultValues={selectedReferee || undefined}
+              isSubmitting={isSubmitting}
             />
-          ))}
-          {referees.length === 0 && (
-            <div className="col-span-full text-center py-8 text-gray-400">
-              No referees found. Add your first referee by clicking the "Add Referee" button.
-            </div>
-          )}
-        </div>
-      )}
+          </DialogContent>
+        </Dialog>
 
-      <Dialog open={isDialogOpen} onOpenChange={handleClose}>
-        <DialogContent className="bg-[#212121] text-white">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedReferee ? 'Edit Referee' : 'Add New Referee'}
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Fill in the referee's details below.
-            </DialogDescription>
-          </DialogHeader>
-          <RefereeForm
-            onSubmit={handleSubmit}
-            defaultValues={selectedReferee || undefined}
-            isSubmitting={isSubmitting}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!refereeToDelete} onOpenChange={(open) => !open && setRefereeToDelete(null)}>
-        <AlertDialogContent className="bg-[#212121] text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
-              Are you sure you want to remove referee {refereeToDelete?.firstName} {refereeToDelete?.lastName}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={() => setRefereeToDelete(null)}
-              className="bg-[#2b2b2b] text-white hover:bg-[#363636]"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => refereeToDelete?.id && handleDelete(refereeToDelete.id)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog open={!!refereeToDelete} onOpenChange={(open) => !open && setRefereeToDelete(null)}>
+          <AlertDialogContent className="bg-[#212121] text-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-400">
+                Are you sure you want to remove referee {refereeToDelete?.firstName} {refereeToDelete?.lastName}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                onClick={() => setRefereeToDelete(null)}
+                className="bg-[#2b2b2b] text-white hover:bg-[#363636]"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => refereeToDelete?.id && handleDelete(refereeToDelete.id)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </DashboardLayout>
   );
 }
