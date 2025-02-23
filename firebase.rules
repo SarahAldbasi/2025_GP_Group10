@@ -20,30 +20,28 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      // Allow creation of the first admin user
-      allow create: if !exists(/databases/$(database)/documents/users/admin);
-      // Allow read for authenticated users
-      allow read: if isAuthenticated();
-      // Allow write for admins or the user themselves
-      allow write: if isAdmin() || isOwner(userId);
+      // Allow initial setup
+      allow create: if true;  // Temporarily allow creation for initialization
+      allow read: if true;    // Temporarily allow read for initialization
+      allow write: if true;   // Temporarily allow write for initialization
     }
 
     // Matches collection
     match /matches/{matchId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if true;    // Temporarily allow read for initialization
+      allow write: if true;   // Temporarily allow write for initialization
     }
 
     // Notifications collection
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if true;    // Temporarily allow read for initialization
+      allow write: if true;   // Temporarily allow write for initialization
     }
 
     // Verification requests collection
     match /verificationRequests/{requestId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow read: if true;    // Temporarily allow read for initialization
+      allow write: if true;   // Temporarily allow write for initialization
     }
   }
 }

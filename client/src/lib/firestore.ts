@@ -436,6 +436,7 @@ export const getReferees = async (): Promise<User[]> => {
   return getUsers('referee');
 };
 
+// Initialize admin user with error handling and retries
 export const initializeAdminUser = async () => {
   try {
     console.log('Starting admin user initialization...', {
@@ -496,7 +497,7 @@ export const initializeAdminUser = async () => {
 
     console.log('Admin user already exists, skipping initialization');
     return false;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in admin initialization:', {
       error,
       errorMessage: error.message,

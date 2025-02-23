@@ -1,6 +1,48 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence, initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, signOut } from "firebase/auth";
+import { getFirestore, enableIndexedDbPersistence, initializeFirestore, CACHE_SIZE_UNLIMITED, clearIndexedDbPersistence } from "firebase/firestore";
+
+// Clear all Firebase-related caches and storage
+async function clearFirebaseData() {
+  console.log('Clearing all Firebase data...');
+
+  // Clear localStorage
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.includes('firebase') || key?.includes('firestore')) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+
+  // Clear IndexedDB databases
+  const databases = await window.indexedDB.databases();
+  await Promise.all(
+    databases
+      .filter(db => db.name?.includes('firebase') || db.name?.includes('firestore'))
+      .map(db => window.indexedDB.deleteDatabase(db.name!))
+  );
+
+  // Clear service workers
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map(registration => registration.unregister()));
+  }
+
+  // Clear application cache
+  if ('caches' in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(
+      cacheNames
+        .filter(name => name.includes('firebase') || name.includes('firestore'))
+        .map(name => caches.delete(name))
+    );
+  }
+}
+
+// Clear all Firebase data before initialization
+await clearFirebaseData();
 
 // Add error handling for missing environment variables
 const requiredEnvVars = [
@@ -32,9 +74,9 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-console.log('Initializing Firebase app...');
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase with a unique name
+console.log('Initializing Firebase app with new configuration...');
+const app = initializeApp(firebaseConfig, 'hakkim-database');
 
 // Initialize Firestore with better offline support
 console.log('Initializing Firestore with offline support...');
@@ -42,9 +84,21 @@ const db = initializeFirestore(app, {
   cacheSizeBytes: CACHE_SIZE_UNLIMITED
 });
 
+// Clear existing Firestore cache
+console.log('Clearing Firestore cache...');
+clearIndexedDbPersistence(db).catch((err) => {
+  console.warn('Error clearing persistence:', err);
+});
+
 // Initialize Auth services
 console.log('Initializing Auth...');
 const auth = getAuth(app);
+
+// Sign out any existing user to ensure clean state
+signOut(auth).catch((error) => {
+  console.warn('Error signing out existing user:', error);
+});
+
 const googleProvider = new GoogleAuthProvider();
 
 // Enable offline persistence with detailed error logging
