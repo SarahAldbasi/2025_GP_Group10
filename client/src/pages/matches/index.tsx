@@ -86,49 +86,59 @@ export default function Matches() {
 
   return (
     <DashboardLayout>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Matches</h1>
-        <Button
-          onClick={() => setIsDialogOpen(true)}
-          className="bg-[#6ab100]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Match
-        </Button>
-      </div>
+      <div 
+        className="min-h-screen p-6"
+        style={{
+          backgroundImage: 'url(/ball-net.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        }}
+      >
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-white">Matches</h1>
+          <Button
+            onClick={() => setIsDialogOpen(true)}
+            className="bg-[#6ab100]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Match
+          </Button>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {matches.map((match) => (
-          <MatchCard
-            key={match.id}
-            match={match}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        ))}
-        {matches.length === 0 && (
-          <div className="col-span-full text-center py-8 text-gray-400">
-            No matches found. Add your first match by clicking the "Add Match" button.
-          </div>
-        )}
-      </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-[#212121] text-white max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="sticky top-0 bg-[#212121] pb-4 z-10">
-            <DialogTitle>
-              {selectedMatch ? 'Edit Match' : 'Add New Match'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="px-1">
-            <MatchForm
-              onSubmit={handleSubmit}
-              defaultValues={selectedMatch || undefined}
-              referees={referees}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {matches.map((match) => (
+            <MatchCard
+              key={match.id}
+              match={match}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
-          </div>
-        </DialogContent>
-      </Dialog>
+          ))}
+          {matches.length === 0 && (
+            <div className="col-span-full text-center py-8 text-gray-400">
+              No matches found. Add your first match by clicking the "Add Match" button.
+            </div>
+          )}
+        </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="bg-[#212121] text-white max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="sticky top-0 bg-[#212121] pb-4 z-10">
+              <DialogTitle>
+                {selectedMatch ? 'Edit Match' : 'Add New Match'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="px-1">
+              <MatchForm
+                onSubmit={handleSubmit}
+                defaultValues={selectedMatch || undefined}
+                referees={referees}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </DashboardLayout>
   );
 }
