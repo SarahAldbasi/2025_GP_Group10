@@ -119,17 +119,16 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
     timestamp: new Date().toISOString()
   });
 
-  // Create a more specific query that includes verification status
-  const q = role 
-    ? query(
-        usersCollection,
-        where('role', '==', role),
-        where('verificationStatus', 'in', ['approved', 'pending', 'rejected'])
-      )
-    : query(
-        usersCollection,
-        where('verificationStatus', 'in', ['approved', 'pending', 'rejected'])
-      );
+  // Create a query that includes both verification status and availability
+  const baseConditions = [
+    where('verificationStatus', '==', 'approved')
+  ];
+
+  if (role) {
+    baseConditions.push(where('role', '==', role));
+  }
+
+  const q = query(usersCollection, ...baseConditions);
 
   return onSnapshot(
     q, 
