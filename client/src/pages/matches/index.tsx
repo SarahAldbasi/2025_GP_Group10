@@ -31,7 +31,6 @@ export default function Matches() {
 
   const createMutation = useMutation({
     mutationFn: (match: InsertMatch) => {
-      // Convert date string to Date object
       const matchData = {
         ...match,
         date: new Date(match.date)
@@ -146,17 +145,19 @@ export default function Matches() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-[#212121] text-white">
-          <DialogHeader>
+        <DialogContent className="bg-[#212121] text-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sticky top-0 bg-[#212121] pb-4 z-10">
             <DialogTitle>
               {selectedMatch ? 'Edit Match' : 'Add New Match'}
             </DialogTitle>
           </DialogHeader>
-          <MatchForm
-            onSubmit={handleSubmit}
-            defaultValues={selectedMatch || undefined}
-            referees={referees}
-          />
+          <div className="px-1">
+            <MatchForm
+              onSubmit={handleSubmit}
+              defaultValues={selectedMatch || undefined}
+              referees={referees}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
