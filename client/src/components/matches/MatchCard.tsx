@@ -51,8 +51,8 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
 
   return (
     <Card className="bg-[#212121] text-white rounded-xl">
-      <div className="bg-[#171717] rounded-b-xl">
-        <div className={`${statusInfo.className} px-6 py-1 rounded-b-xl text-white text-sm font-medium text-center`}>
+      <div className="bg-[#171717] flex justify-center rounded-b-xl">
+        <div className={`${statusInfo.className} px-6 py-1 rounded-b-xl text-white text-sm font-medium`}>
           {statusInfo.text}
         </div>
       </div>

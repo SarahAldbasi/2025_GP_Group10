@@ -86,15 +86,7 @@ export default function Matches() {
 
   return (
     <DashboardLayout>
-      <div 
-        className="min-h-screen p-6"
-        style={{
-          backgroundImage: 'url(/ball-net.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed'
-        }}
-      >
+      <div className="p-6">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Matches</h1>
           <Button
