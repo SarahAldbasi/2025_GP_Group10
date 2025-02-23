@@ -21,7 +21,7 @@ export default function Login() {
 
   return (
     <div className="auth-container">
-      <img src="/Hakkim_white.svg" alt="Hakkim Logo" className="auth-logo" />
+      <img src="../../../client/public/Hakkim_white.svg" alt="Hakkim Logo" className="auth-logo" />
       <form className="auth-form" onSubmit={handleSubmit}>
         <h1 className="auth-title">Welcome!</h1>
 

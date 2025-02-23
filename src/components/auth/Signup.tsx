@@ -14,7 +14,7 @@ export default function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -31,12 +31,12 @@ export default function Signup() {
 
   return (
     <div className="auth-container">
-      <img src="/Hakkim_white.png" alt="Hakkim Logo" className="auth-logo" />
+      <img src="../../../client/public/Hakkim_white.svg" alt="Hakkim Logo" className="auth-logo" />
       <form className="auth-form" onSubmit={handleSubmit}>
         <h1 className="auth-title">Let's get started!</h1>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <div className="form-group">
           <input
             type="text"
