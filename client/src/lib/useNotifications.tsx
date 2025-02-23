@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/useAuth';
 
 interface NotificationsContextType {
   notifications: FirestoreNotification[];
-  addNotification: (message: string) => void;
+  addNotification: (message: string) => Promise<void>;
   markAllAsRead: () => void;
 }
 
@@ -29,9 +29,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [user]);
 
-  const addNotification = useCallback((message: string) => {
+  const addNotification = useCallback(async (message: string) => {
     if (!user) return;
-    addFirestoreNotification(user.uid, message);
+    await addFirestoreNotification(message);
   }, [user]);
 
   const markAllAsRead = useCallback(() => {

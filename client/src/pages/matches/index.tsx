@@ -50,11 +50,11 @@ export default function Matches() {
       if (selectedMatch) {
         await updateMatch(selectedMatch.id!, data);
         toast({ title: 'Match updated successfully' });
-        addNotification(`Match ${data.homeTeam} vs ${data.awayTeam} has been updated`);
+        await addNotification(`Match ${data.homeTeam} vs ${data.awayTeam} has been updated`);
       } else {
         await createMatch(data);
         toast({ title: 'Match created successfully' });
-        addNotification(`New match added: ${data.homeTeam} vs ${data.awayTeam}`);
+        await addNotification(`New match added: ${data.homeTeam} vs ${data.awayTeam}`);
       }
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       setIsDialogOpen(false);
@@ -75,7 +75,7 @@ export default function Matches() {
       await deleteMatch(matchToDelete.id);
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast({ title: 'Match deleted successfully' });
-      addNotification(`Match ${matchToDelete.homeTeam} vs ${matchToDelete.awayTeam} has been deleted`);
+      await addNotification(`Match ${matchToDelete.homeTeam} vs ${matchToDelete.awayTeam} has been deleted`);
       setMatchToDelete(null);
     } catch (error) {
       toast({ 
