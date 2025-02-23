@@ -268,7 +268,7 @@ export const subscribeToNotifications = (userId: string, callback: (notification
           return {
             id: doc.id,
             message: data.message,
-            timestamp: data.timestamp.toDate(), // Properly convert Firestore Timestamp to Date
+            timestamp: data.timestamp.toDate(), // Convert Firestore Timestamp to Date
             readBy: data.readBy || []
           } as Notification;
         })

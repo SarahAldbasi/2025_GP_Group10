@@ -11,6 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { Match } from '@shared/schema';
 import { getMatches, createMatch, updateMatch, deleteMatch, getReferees } from '@/lib/firestore';
@@ -20,6 +30,7 @@ import { useNotifications } from '@/lib/useNotifications';
 export default function Matches() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [matchToDelete, setMatchToDelete] = useState<Match | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
@@ -37,7 +48,7 @@ export default function Matches() {
   const handleSubmit = async (data: Omit<Match, 'id'>) => {
     try {
       if (selectedMatch) {
-        await updateMatch(selectedMatch.id, data);
+        await updateMatch(selectedMatch.id!, data);
         toast({ title: 'Match updated successfully' });
         addNotification(`Match ${data.homeTeam} vs ${data.awayTeam} has been updated`);
       } else {
@@ -57,15 +68,15 @@ export default function Matches() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleConfirmDelete = async () => {
+    if (!matchToDelete?.id) return;
+
     try {
-      const matchToDelete = matches.find(m => m.id === id);
-      await deleteMatch(id);
+      await deleteMatch(matchToDelete.id);
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast({ title: 'Match deleted successfully' });
-      if (matchToDelete) {
-        addNotification(`Match ${matchToDelete.homeTeam} vs ${matchToDelete.awayTeam} has been deleted`);
-      }
+      addNotification(`Match ${matchToDelete.homeTeam} vs ${matchToDelete.awayTeam} has been deleted`);
+      setMatchToDelete(null);
     } catch (error) {
       toast({ 
         variant: "destructive", 
@@ -112,7 +123,7 @@ export default function Matches() {
               key={match.id}
               match={match}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={() => setMatchToDelete(match)}
             />
           ))}
           {matches.length === 0 && (
@@ -138,6 +149,31 @@ export default function Matches() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!matchToDelete} onOpenChange={(open) => !open && setMatchToDelete(null)}>
+          <AlertDialogContent className="bg-[#212121] text-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-400">
+                Are you sure you want to delete the match between {matchToDelete?.homeTeam} and {matchToDelete?.awayTeam}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                onClick={() => setMatchToDelete(null)}
+                className="bg-[#2b2b2b] text-white hover:bg-[#363636]"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
