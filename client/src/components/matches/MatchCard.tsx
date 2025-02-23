@@ -13,7 +13,7 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'live':
-        return 'text-green-500';
+        return 'text-red-500';
       case 'ended':
         return 'text-red-500';
       default:
@@ -53,7 +53,7 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.onerror = null; // Prevent infinite loop
+                    target.onerror = null;
                     const initials = generateTeamInitials(match.homeTeam);
                     target.src = `data:image/svg+xml,${encodeURIComponent(`
                       <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -79,7 +79,7 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.onerror = null; // Prevent infinite loop
+                    target.onerror = null;
                     const initials = generateTeamInitials(match.awayTeam);
                     target.src = `data:image/svg+xml,${encodeURIComponent(`
                       <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

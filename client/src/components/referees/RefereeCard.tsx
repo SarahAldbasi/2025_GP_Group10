@@ -17,7 +17,7 @@ export default function RefereeCard({ referee, onEdit, onDelete }: RefereeCardPr
           <User className="w-12 h-12 text-[#6ab100] mr-4" />
           <div>
             <h3 className="text-xl font-semibold">{`${referee.firstName} ${referee.lastName}`}</h3>
-            <span className={`text-sm ${referee.isAvailable ? 'text-green-500' : 'text-red-500'}`}>
+            <span className={`text-sm ${referee.isAvailable ? 'text-[#6ab100]' : 'text-red-500'}`}>
               {referee.isAvailable ? 'Available' : 'Unavailable'}
             </span>
           </div>
