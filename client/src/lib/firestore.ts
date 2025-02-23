@@ -135,8 +135,19 @@ export const updateReferee = async (id: string, referee: Partial<Referee>): Prom
 export const deleteReferee = async (id: string): Promise<void> => {
   try {
     console.log('Deleting referee:', { id, timestamp: new Date().toISOString() });
-    const docRef = doc(refereesCollection, id);
-    await deleteDoc(docRef);
+
+    // Get the referee's name before deletion to use in notification
+    const refereeDoc = await getDoc(doc(refereesCollection, id));
+    const refereeName = refereeDoc.exists() 
+      ? `${refereeDoc.data().firstName} ${refereeDoc.data().lastName}`
+      : 'Unknown referee';
+
+    // Delete the referee
+    await deleteDoc(doc(refereesCollection, id));
+
+    // Add notification about deletion
+    await addNotification(`Referee ${refereeName} has been removed from the system`);
+
     console.log('Successfully deleted referee:', { id, timestamp: new Date().toISOString() });
   } catch (error) {
     console.error('Error deleting referee:', {
@@ -292,11 +303,16 @@ export const addNotification = async (message: string): Promise<void> => {
       message,
       timestamp: new Date().toISOString()
     });
-    await addDoc(notificationsCollection, {
+
+    // Store the actual message text instead of IDs
+    const notificationData = {
       message,
       timestamp: Timestamp.fromDate(new Date()),
       readBy: [] // Initialize empty array of users who have read this
-    });
+    };
+
+    await addDoc(notificationsCollection, notificationData);
+    console.log('Successfully created notification');
   } catch (error) {
     console.error('Error creating notification:', {
       error,
