@@ -36,7 +36,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto px-1">
         <div className="grid grid-cols-2 gap-3">
           <FormField
             control={form.control}
@@ -107,8 +107,13 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                 <FormControl>
                   <Input 
                     type="datetime-local" 
-                    value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                    value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)}
+                    onChange={(e) => {
+                      const date = new Date(e.target.value);
+                      if (!isNaN(date.getTime())) {
+                        field.onChange(date);
+                      }
+                    }}
                     className="bg-[#2b2b2b] text-white border-0" 
                   />
                 </FormControl>
