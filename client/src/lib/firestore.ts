@@ -118,7 +118,7 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
     timestamp: new Date().toISOString()
   });
 
-  // Only filter by role initially
+  // Create query based on role
   const q = role 
     ? query(usersCollection, where('role', '==', role))
     : query(usersCollection);
@@ -129,6 +129,7 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
       includeMetadataChanges: true
     },
     (snapshot) => {
+      // Get all users
       const users = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -139,26 +140,25 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
         users: users.map(u => ({
           id: u.id,
           role: u.role,
-          isAvailable: u.isAvailable,
-          verificationStatus: u.verificationStatus
+          isAvailable: u.isAvailable
         }))
       });
 
-      // For referees, filter based on verification status and availability
-      const filteredUsers = role === 'referee'
-        ? users.filter(user => 
-            (user.verificationStatus === 'approved' || !user.verificationStatus) && 
-            (user.isAvailable === undefined || user.isAvailable === true)
-          )
-        : users;
+      // Filter users based on role and context
+      let filteredUsers = users;
+
+      // Only apply availability filter for referees in specific contexts
+      if (role === 'referee') {
+        // Show all referees for the referee page
+        filteredUsers = users;
+      }
 
       console.log('Filtered users data:', {
         count: filteredUsers.length,
         users: filteredUsers.map(u => ({
           id: u.id,
           role: u.role,
-          isAvailable: u.isAvailable,
-          verificationStatus: u.verificationStatus
+          isAvailable: u.isAvailable
         }))
       });
 
@@ -168,6 +168,7 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
       console.error('Users subscription error:', {
         code: error.code,
         message: error.message,
+        details: error,
         timestamp: new Date().toISOString()
       });
       handleFirestoreError(error as FirestoreError, 'subscription');
@@ -175,6 +176,7 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
   );
 };
 
+// Create user with proper defaults
 export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
   try {
     console.log('Creating new user:', {
@@ -185,8 +187,8 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
     // Set default values for new users
     const userData = {
       ...user,
-      isAvailable: user.role === 'referee' ? true : undefined,
-      verificationStatus: user.role === 'referee' ? 'approved' : undefined
+      isAvailable: true, // Always set isAvailable to true for new users
+      verificationStatus: user.role === 'referee' ? 'approved' : undefined // Auto-approve referees
     };
 
     const docRef = await addDoc(usersCollection, userData);
@@ -201,8 +203,10 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
 
     console.log('Successfully created user:', {
       id: docRef.id,
+      data: newUser,
       timestamp: new Date().toISOString()
     });
+
     return newUser;
   } catch (error) {
     console.error('Error creating user:', {
@@ -506,7 +510,7 @@ export const initializeAdminUser = async () => {
         timestamp: new Date().toISOString()
       });
 
-      const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+      const userCredential = await auth.createUserWithEmailAndPassword(adminEmail, adminPassword);
 
       console.log('Admin auth user created:', {
         uid: userCredential.user.uid,
