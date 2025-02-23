@@ -155,7 +155,10 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                   >
                     <option value="">Select Main Referee</option>
                     {referees?.map((referee) => (
-                      <option key={referee.id} value={referee.id}>
+                      <option 
+                        key={referee.id} 
+                        value={`${referee.firstName} ${referee.lastName}`}
+                      >
                         {`${referee.firstName} ${referee.lastName}`}
                       </option>
                     ))}
@@ -181,7 +184,10 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                     >
                       <option value="">Select Referee</option>
                       {referees?.map((referee) => (
-                        <option key={referee.id} value={referee.id}>
+                        <option 
+                          key={referee.id} 
+                          value={`${referee.firstName} ${referee.lastName}`}
+                        >
                           {`${referee.firstName} ${referee.lastName}`}
                         </option>
                       ))}
@@ -206,7 +212,10 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                     >
                       <option value="">Select Referee</option>
                       {referees?.map((referee) => (
-                        <option key={referee.id} value={referee.id}>
+                        <option 
+                          key={referee.id} 
+                          value={`${referee.firstName} ${referee.lastName}`}
+                        >
                           {`${referee.firstName} ${referee.lastName}`}
                         </option>
                       ))}

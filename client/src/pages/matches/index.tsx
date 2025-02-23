@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import MatchCard from '@/components/matches/MatchCard';
 import MatchForm from '@/components/matches/MatchForm';
@@ -12,8 +12,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import type { Match, InsertMatch, Referee } from '@shared/schema';
+import { Match, Referee } from '@shared/schema';
+import { getMatches, createMatch, updateMatch, deleteMatch } from '@/lib/firestore';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Matches() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -21,86 +22,53 @@ export default function Matches() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: matches = [], isLoading: isLoadingMatches } = useQuery<Match[]>({
-    queryKey: ['/api/matches']
+  const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
+    queryKey: ['matches'],
+    queryFn: getMatches
   });
 
   const { data: referees = [], isLoading: isLoadingReferees } = useQuery<Referee[]>({
-    queryKey: ['/api/referees']
+    queryKey: ['referees']
   });
 
-  const createMutation = useMutation({
-    mutationFn: (match: InsertMatch) => {
-      const matchData = {
-        ...match,
-        date: new Date(match.date)
-      };
-      return apiRequest('POST', '/api/matches', matchData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
-      setIsDialogOpen(false);
-      toast({ title: 'Match created successfully' });
-    },
-    onError: () => {
-      toast({ 
-        variant: "destructive", 
-        title: 'Failed to create match',
-        description: 'Please try again' 
-      });
-    }
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (match: Match) => {
-      const matchData = {
-        ...match,
-        date: new Date(match.date)
-      };
-      return apiRequest('PATCH', `/api/matches/${match.id}`, matchData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
+  const handleSubmit = async (data: Omit<Match, 'id'>) => {
+    try {
+      if (selectedMatch) {
+        await updateMatch(selectedMatch.id, data);
+        toast({ title: 'Match updated successfully' });
+      } else {
+        await createMatch(data);
+        toast({ title: 'Match created successfully' });
+      }
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
       setIsDialogOpen(false);
       setSelectedMatch(null);
-      toast({ title: 'Match updated successfully' });
-    },
-    onError: () => {
+    } catch (error) {
       toast({ 
         variant: "destructive", 
-        title: 'Failed to update match',
+        title: 'Operation failed',
         description: 'Please try again' 
       });
     }
-  });
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) =>
-      apiRequest('DELETE', `/api/matches/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMatch(id);
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast({ title: 'Match deleted successfully' });
-    },
-    onError: () => {
+    } catch (error) {
       toast({ 
         variant: "destructive", 
         title: 'Failed to delete match',
         description: 'Please try again' 
       });
     }
-  });
+  };
 
   const handleEdit = (match: Match) => {
     setSelectedMatch(match);
     setIsDialogOpen(true);
-  };
-
-  const handleSubmit = (data: InsertMatch) => {
-    if (selectedMatch) {
-      updateMutation.mutate({ ...data, id: selectedMatch.id });
-    } else {
-      createMutation.mutate(data);
-    }
   };
 
   const isLoading = isLoadingMatches || isLoadingReferees;
@@ -134,7 +102,7 @@ export default function Matches() {
             key={match.id}
             match={match}
             onEdit={handleEdit}
-            onDelete={(id) => deleteMutation.mutate(id)}
+            onDelete={handleDelete}
           />
         ))}
         {matches.length === 0 && (
