@@ -78,11 +78,9 @@ export default function NotificationBell({ notifications, onMarkAsRead }: Notifi
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`border-b border-[#2b2b2b] pb-2 last:border-none ${
-                      user && !(notification.readBy || []).includes(user.uid) ? 'bg-opacity-10 bg-white' : ''
-                    }`}
+                    className="border-b border-[#2b2b2b] pb-2 last:border-none"
                   >
-                    <p className="text-sm">{notification.message}</p>
+                    <p>{notification.message}</p>
                     <p className="text-xs text-[#787878] mt-1">
                       {formatTimestamp(notification.timestamp)}
                     </p>
