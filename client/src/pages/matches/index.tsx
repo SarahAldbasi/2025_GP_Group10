@@ -88,7 +88,7 @@ export default function Matches() {
     <DashboardLayout>
       <div className="p-6">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Matches</h1>
+          <h1 className="text-3xl font-bold">Matches</h1>
           <Button
             onClick={() => setIsDialogOpen(true)}
             className="bg-[#6ab100]"

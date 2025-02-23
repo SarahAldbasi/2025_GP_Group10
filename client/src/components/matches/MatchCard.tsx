@@ -29,7 +29,7 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
       default:
         return {
           text: isUpcoming ? 'Upcoming' : 'Not Started',
-          className: 'bg-[#6ab100]'
+          className: isUpcoming ? 'bg-[#6ab100]' : 'bg-[#6ab100]'
         };
     }
   };
@@ -51,8 +51,8 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
 
   return (
     <Card className="bg-[#212121] text-white rounded-xl">
-      <div className="bg-[#171717] flex justify-center rounded-b-xl">
-        <div className={`${statusInfo.className} px-6 py-1 rounded-b-xl text-white text-sm font-medium`}>
+      <div className="flex justify-center">
+        <div className={`${statusInfo.className} w-32 py-1 rounded-b-xl text-white text-sm font-medium text-center`}>
           {statusInfo.text}
         </div>
       </div>
