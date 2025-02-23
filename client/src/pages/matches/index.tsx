@@ -86,8 +86,8 @@ export default function Matches() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-8">
+      <div className="px-8 pt-4">
+        <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Matches</h1>
           <Button
             onClick={() => setIsDialogOpen(true)}

@@ -65,8 +65,8 @@ export default function Profile() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
-        <h1 className="text-3xl font-bold mb-8">Profile Settings</h1>
+      <div className="px-8 pt-4">
+        <h1 className="text-3xl font-bold mb-6">Profile Settings</h1>
 
         <Card className="bg-[#212121] max-w-2xl">
           <CardHeader>
