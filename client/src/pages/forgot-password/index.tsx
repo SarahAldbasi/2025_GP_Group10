@@ -29,8 +29,8 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#171717] bg-[url('/ball-net.png')] bg-cover bg-center">
-      <img src="/Hakkim_white.png" alt="Hakkim Logo" className="absolute top-4 left-4 w-32" />
+    <div className="min-h-screen flex items-center justify-center bg-[#171717] bg-[url('/ball-net.svg')] bg-cover bg-center">
+      <img src="/Hakkim_white.svg" alt="Hakkim Logo" className="absolute top-4 left-4 w-32" />
 
       <Card className="w-full max-w-md mx-4 bg-[#212121] rounded-xl border-0">
         <CardContent className="pt-6">

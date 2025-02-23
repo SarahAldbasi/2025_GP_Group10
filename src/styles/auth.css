@@ -17,7 +17,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('/ball-net.png');
+  background-image: url('/ball-net.svg');
   background-size: cover;
   background-position: center;
 }

@@ -21,12 +21,12 @@ export default function Login() {
 
   return (
     <div className="auth-container">
-      <img src="/Hakkim_white.png" alt="Hakkim Logo" className="auth-logo" />
+      <img src="/Hakkim_white.svg" alt="Hakkim Logo" className="auth-logo" />
       <form className="auth-form" onSubmit={handleSubmit}>
         <h1 className="auth-title">Welcome!</h1>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <div className="form-group">
           <input
             type="email"
