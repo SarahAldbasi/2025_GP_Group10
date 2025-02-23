@@ -47,17 +47,20 @@ async function createUserDocument(user: any) {
       return;
     }
 
-    // Create new user document
+    // Create new user document with validated data
     const userData = {
       uid: user.uid,
       email: user.email || '',
       firstName: user.displayName?.split(' ')[0] || '',
       lastName: user.displayName?.split(' ')[1] || '',
-      photoURL: user.photoURL || undefined,
+      photoURL: user.photoURL || null, // Changed from undefined to null
       role: 'admin', // Default to admin role
       isAvailable: true,
-      verificationStatus: undefined
+      verificationStatus: 'pending'
     };
+
+    // Log the data being saved
+    console.log('Attempting to create user document with data:', userData);
 
     await addDoc(usersCollection, userData);
     console.log('Created new user document:', user.uid);

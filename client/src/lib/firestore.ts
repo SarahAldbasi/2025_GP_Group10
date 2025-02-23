@@ -28,12 +28,12 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  photoURL?: string;
+  photoURL: string | null; 
   uid: string;
   role: 'admin' | 'referee';
   phone?: string;
-  isAvailable?: boolean;
-  verificationStatus?: 'pending' | 'approved' | 'rejected';
+  isAvailable: boolean; 
+  verificationStatus: 'pending' | 'approved' | 'rejected';
   documentationUrl?: string;
 }
 
