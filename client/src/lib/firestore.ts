@@ -20,6 +20,7 @@ import { db } from './firebase';
 const refereesCollection = collection(db, 'referees');
 const matchesCollection = collection(db, 'matches');
 const notificationsCollection = collection(db, 'notifications');
+const verificationRequestsCollection = collection(db, 'verificationRequests');
 
 // Types
 export interface Referee {
@@ -29,6 +30,8 @@ export interface Referee {
   email: string;
   phone: string;
   isAvailable: boolean;
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+  documentationUrl?: string;
 }
 
 export interface Match {
@@ -48,8 +51,51 @@ export interface Notification {
   id?: string;
   message: string;
   timestamp: Date;
-  readBy: string[]; // Array of user IDs who have read this notification
+  readBy: string[]; 
 }
+
+export interface VerificationRequest {
+  id?: string;
+  refereeId: string;
+  submissionDate: Date;
+  documentationType: 'license' | 'certificate' | 'other';
+  documentationData: {
+    description: string;
+    fileType: string;
+    additionalNotes?: string;
+  };
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy?: string;
+  reviewDate?: Date;
+  reviewNotes?: string;
+}
+
+// Mock verification requests for static feature
+const MOCK_VERIFICATION_REQUESTS: VerificationRequest[] = [
+  {
+    id: 'ver1',
+    refereeId: 'ref1',
+    submissionDate: new Date('2024-02-20'),
+    documentationType: 'license',
+    documentationData: {
+      description: 'Official Referee License',
+      fileType: 'pdf',
+      additionalNotes: '5 years of experience'
+    },
+    status: 'pending'
+  },
+  {
+    id: 'ver2',
+    refereeId: 'ref2',
+    submissionDate: new Date('2024-02-21'),
+    documentationType: 'certificate',
+    documentationData: {
+      description: 'Referee Training Certificate',
+      fileType: 'pdf'
+    },
+    status: 'pending'
+  }
+];
 
 // Error handling helper with detailed logging
 const handleFirestoreError = (error: FirestoreError, operation: string) => {
@@ -279,7 +325,7 @@ export const subscribeToNotifications = (userId: string, callback: (notification
           return {
             id: doc.id,
             message: data.message,
-            timestamp: data.timestamp.toDate(), // Convert Firestore Timestamp to Date
+            timestamp: data.timestamp.toDate(), 
             readBy: data.readBy || []
           } as Notification;
         })
@@ -308,7 +354,7 @@ export const addNotification = async (message: string): Promise<void> => {
     const notificationData = {
       message,
       timestamp: Timestamp.fromDate(new Date()),
-      readBy: [] // Initialize empty array of users who have read this
+      readBy: [] 
     };
 
     await addDoc(notificationsCollection, notificationData);
@@ -351,9 +397,33 @@ export const markNotificationsAsRead = async (userId: string): Promise<void> => 
   }
 };
 
+// Verification operations
+export const getVerificationRequests = async (): Promise<VerificationRequest[]> => {
+  // For static feature, return mock data
+  return MOCK_VERIFICATION_REQUESTS;
+};
+
+export const updateVerificationRequest = async (
+  id: string,
+  update: Partial<VerificationRequest>
+): Promise<void> => {
+  // For static feature, log the update
+  console.log('Updating verification request:', { id, update });
+
+  // If it's an approval/rejection, create a notification
+  if (update.status === 'approved' || update.status === 'rejected') {
+    const request = MOCK_VERIFICATION_REQUESTS.find(r => r.id === id);
+    if (request) {
+      const message = `Referee verification request ${id} has been ${update.status}`;
+      await addNotification(message);
+    }
+  }
+};
+
 export { 
   refereesCollection,
   matchesCollection,
   notificationsCollection,
+  verificationRequestsCollection,
   Timestamp
 };
