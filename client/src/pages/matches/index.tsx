@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { Match, InsertMatch } from '@shared/schema';
+import type { Match, InsertMatch, Referee } from '@shared/schema';
 
 export default function Matches() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -21,28 +21,57 @@ export default function Matches() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: matches, isLoading } = useQuery<Match[]>({
+  const { data: matches = [], isLoading: isLoadingMatches } = useQuery<Match[]>({
     queryKey: ['/api/matches']
   });
 
+  const { data: referees = [], isLoading: isLoadingReferees } = useQuery<Referee[]>({
+    queryKey: ['/api/referees']
+  });
+
   const createMutation = useMutation({
-    mutationFn: (match: InsertMatch) =>
-      apiRequest('POST', '/api/matches', match),
+    mutationFn: (match: InsertMatch) => {
+      // Convert date string to Date object
+      const matchData = {
+        ...match,
+        date: new Date(match.date)
+      };
+      return apiRequest('POST', '/api/matches', matchData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
       setIsDialogOpen(false);
       toast({ title: 'Match created successfully' });
+    },
+    onError: () => {
+      toast({ 
+        variant: "destructive", 
+        title: 'Failed to create match',
+        description: 'Please try again' 
+      });
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: (match: Match) =>
-      apiRequest('PATCH', `/api/matches/${match.id}`, match),
+    mutationFn: (match: Match) => {
+      const matchData = {
+        ...match,
+        date: new Date(match.date)
+      };
+      return apiRequest('PATCH', `/api/matches/${match.id}`, matchData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
       setIsDialogOpen(false);
       setSelectedMatch(null);
       toast({ title: 'Match updated successfully' });
+    },
+    onError: () => {
+      toast({ 
+        variant: "destructive", 
+        title: 'Failed to update match',
+        description: 'Please try again' 
+      });
     }
   });
 
@@ -52,6 +81,13 @@ export default function Matches() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
       toast({ title: 'Match deleted successfully' });
+    },
+    onError: () => {
+      toast({ 
+        variant: "destructive", 
+        title: 'Failed to delete match',
+        description: 'Please try again' 
+      });
     }
   });
 
@@ -68,8 +104,16 @@ export default function Matches() {
     }
   };
 
+  const isLoading = isLoadingMatches || isLoadingReferees;
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-[50vh]">
+          <div className="text-lg text-gray-400">Loading...</div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (
@@ -86,7 +130,7 @@ export default function Matches() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {matches?.map((match) => (
+        {matches.map((match) => (
           <MatchCard
             key={match.id}
             match={match}
@@ -94,6 +138,11 @@ export default function Matches() {
             onDelete={(id) => deleteMutation.mutate(id)}
           />
         ))}
+        {matches.length === 0 && (
+          <div className="col-span-full text-center py-8 text-gray-400">
+            No matches found. Add your first match by clicking the "Add Match" button.
+          </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -106,6 +155,7 @@ export default function Matches() {
           <MatchForm
             onSubmit={handleSubmit}
             defaultValues={selectedMatch || undefined}
+            referees={referees}
           />
         </DialogContent>
       </Dialog>
