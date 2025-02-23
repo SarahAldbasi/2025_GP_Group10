@@ -24,14 +24,45 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
   return (
     <Card className="bg-[#212121] text-white rounded-xl">
       <CardContent className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">{match.homeTeam} vs {match.awayTeam}</h3>
-          <span className={`${getStatusColor(match.status)} font-medium`}>
+        <div className="mb-4">
+          <span className={`${getStatusColor(match.status)} font-medium text-sm`}>
             {match.status.replace('_', ' ').toUpperCase()}
           </span>
         </div>
 
-        <div className="space-y-2 text-[#787878]">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col items-center flex-1">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2">
+              <img 
+                src={`/team-logos/${match.homeTeam.toLowerCase().replace(/\s+/g, '-')}.png`} 
+                alt={match.homeTeam}
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = '/team-logos/default-team.png';
+                }}
+              />
+            </div>
+            <span className="text-sm font-medium text-center">{match.homeTeam}</span>
+          </div>
+
+          <div className="mx-4 text-xl font-bold text-gray-400">VS</div>
+
+          <div className="flex flex-col items-center flex-1">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2">
+              <img 
+                src={`/team-logos/${match.awayTeam.toLowerCase().replace(/\s+/g, '-')}.png`} 
+                alt={match.awayTeam}
+                className="w-12 h-12 object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = '/team-logos/default-team.png';
+                }}
+              />
+            </div>
+            <span className="text-sm font-medium text-center">{match.awayTeam}</span>
+          </div>
+        </div>
+
+        <div className="space-y-2 text-[#787878] text-sm">
           <p>League: {match.league}</p>
           <p>Venue: {match.venue}</p>
           <p>Date: {format(new Date(match.date), 'PPP')}</p>
