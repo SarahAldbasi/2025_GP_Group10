@@ -119,19 +119,24 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
     timestamp: new Date().toISOString()
   });
 
-  // Create a query that includes both verification status and availability
-  const baseConditions = [
-    where('verificationStatus', '==', 'approved')
-  ];
+  let queryConstraints = [];
 
+  // Add role filter if specified
   if (role) {
-    baseConditions.push(where('role', '==', role));
+    queryConstraints.push(where('role', '==', role));
   }
 
-  const q = query(usersCollection, ...baseConditions);
+  // Add verification status filter for referees
+  if (role === 'referee') {
+    queryConstraints.push(where('verificationStatus', '==', 'approved'));
+  }
+
+  const q = queryConstraints.length > 0 
+    ? query(usersCollection, ...queryConstraints)
+    : query(usersCollection);
 
   return onSnapshot(
-    q, 
+    q,
     {
       includeMetadataChanges: true // This ensures we get all updates
     },
@@ -141,11 +146,18 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
         timestamp: new Date().toISOString(),
         metadata: snapshot.metadata
       });
+
       const users = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as User));
-      callback(users);
+
+      // Filter active referees if needed
+      const filteredUsers = role === 'referee' 
+        ? users.filter(user => user.isAvailable)
+        : users;
+
+      callback(filteredUsers);
     },
     (error) => {
       console.error('Users subscription error:', {
@@ -165,22 +177,15 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
       timestamp: new Date().toISOString()
     });
 
-    // If admin is creating a referee, automatically set verification status to approved
-    if (user.role === 'referee' && auth.currentUser) {
-      const adminSnapshot = await getDocs(
-        query(usersCollection, 
-          where('uid', '==', auth.currentUser.uid),
-          where('role', '==', 'admin')
-        )
-      );
+    // Set default values for new users
+    const userData = {
+      ...user,
+      isAvailable: user.role === 'referee' ? true : undefined,
+      verificationStatus: user.role === 'referee' ? 'approved' : undefined
+    };
 
-      if (!adminSnapshot.empty) {
-        user.verificationStatus = 'approved';
-      }
-    }
-
-    const docRef = await addDoc(usersCollection, user);
-    const newUser = { id: docRef.id, ...user };
+    const docRef = await addDoc(usersCollection, userData);
+    const newUser = { id: docRef.id, ...userData };
 
     // Create notification for new referee
     if (user.role === 'referee') {
