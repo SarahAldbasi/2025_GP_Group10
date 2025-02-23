@@ -12,6 +12,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { 
   subscribeToReferees,
@@ -24,6 +34,7 @@ import {
 export default function Referees() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedReferee, setSelectedReferee] = useState<Referee | null>(null);
+  const [refereeToDelete, setRefereeToDelete] = useState<Referee | null>(null);
   const [referees, setReferees] = useState<Referee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,6 +137,7 @@ export default function Referees() {
     try {
       await deleteReferee(id);
       showSuccessToast('Referee deleted successfully');
+      setRefereeToDelete(null);
     } catch (error) {
       console.error('Error deleting referee:', error);
       toast({ 
@@ -183,7 +195,7 @@ export default function Referees() {
               key={referee.id}
               referee={referee}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={() => setRefereeToDelete(referee)}
             />
           ))}
           {referees.length === 0 && (
@@ -211,6 +223,31 @@ export default function Referees() {
           />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!refereeToDelete} onOpenChange={(open) => !open && setRefereeToDelete(null)}>
+        <AlertDialogContent className="bg-[#212121] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Are you sure you want to remove referee {refereeToDelete?.firstName} {refereeToDelete?.lastName}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => setRefereeToDelete(null)}
+              className="bg-[#2b2b2b] text-white hover:bg-[#363636]"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => refereeToDelete?.id && handleDelete(refereeToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
