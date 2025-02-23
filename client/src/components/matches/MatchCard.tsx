@@ -21,6 +21,19 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
     }
   };
 
+  const generateTeamInitials = (teamName: string) => {
+    return teamName
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const getTeamLogoUrl = (teamName: string) => {
+    const sanitizedName = teamName.toLowerCase().replace(/\s+/g, '-');
+    return `/team-logos/${sanitizedName}.svg`;
+  };
+
   return (
     <Card className="bg-[#212121] text-white rounded-xl">
       <CardContent className="p-6">
@@ -33,14 +46,24 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col items-center flex-1">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2">
-              <img 
-                src={`/team-logos/${match.homeTeam.toLowerCase().replace(/\s+/g, '-')}.png`} 
-                alt={match.homeTeam}
-                className="w-12 h-12 object-contain"
-                onError={(e) => {
-                  e.currentTarget.src = '/team-logos/default-team.png';
-                }}
-              />
+              <div className="relative w-12 h-12">
+                <img 
+                  src={getTeamLogoUrl(match.homeTeam)}
+                  alt={match.homeTeam}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null; // Prevent infinite loop
+                    const initials = generateTeamInitials(match.homeTeam);
+                    target.src = `data:image/svg+xml,${encodeURIComponent(`
+                      <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" fill="#6ab100"/>
+                        <text x="50" y="50" font-family="Arial" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
+                      </svg>
+                    `)}`;
+                  }}
+                />
+              </div>
             </div>
             <span className="text-sm font-medium text-center">{match.homeTeam}</span>
           </div>
@@ -49,14 +72,24 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
 
           <div className="flex flex-col items-center flex-1">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2">
-              <img 
-                src={`/team-logos/${match.awayTeam.toLowerCase().replace(/\s+/g, '-')}.png`} 
-                alt={match.awayTeam}
-                className="w-12 h-12 object-contain"
-                onError={(e) => {
-                  e.currentTarget.src = '/team-logos/default-team.png';
-                }}
-              />
+              <div className="relative w-12 h-12">
+                <img 
+                  src={getTeamLogoUrl(match.awayTeam)}
+                  alt={match.awayTeam}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null; // Prevent infinite loop
+                    const initials = generateTeamInitials(match.awayTeam);
+                    target.src = `data:image/svg+xml,${encodeURIComponent(`
+                      <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" fill="#6ab100"/>
+                        <text x="50" y="50" font-family="Arial" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
+                      </svg>
+                    `)}`;
+                  }}
+                />
+              </div>
             </div>
             <span className="text-sm font-medium text-center">{match.awayTeam}</span>
           </div>
