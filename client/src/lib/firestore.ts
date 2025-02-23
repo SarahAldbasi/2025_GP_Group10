@@ -14,7 +14,8 @@ import {
   getDoc,
   arrayUnion
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 // Collection references
 const usersCollection = collection(db, 'users');
@@ -434,6 +435,204 @@ export const updateVerificationRequest = async (
 export const getReferees = async (): Promise<User[]> => {
   return getUsers('referee');
 };
+
+export const initializeAdminUser = async () => {
+  try {
+    console.log('Starting admin user initialization...', {
+      timestamp: new Date().toISOString(),
+      database: 'Hakkim-Database'
+    });
+
+    const adminQuery = query(usersCollection, where('role', '==', 'admin'));
+    const snapshot = await getDocs(adminQuery);
+
+    console.log('Checked for existing admin:', {
+      exists: !snapshot.empty,
+      count: snapshot.docs.length,
+      timestamp: new Date().toISOString()
+    });
+
+    if (snapshot.empty) {
+      // Create Firebase Auth user
+      const adminEmail = 'admin@footballadmin.com';
+      const adminPassword = 'Admin123!'; // Should be changed after first login
+
+      console.log('Creating admin auth user...', {
+        email: adminEmail,
+        timestamp: new Date().toISOString()
+      });
+
+      const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+
+      console.log('Admin auth user created:', {
+        uid: userCredential.user.uid,
+        timestamp: new Date().toISOString()
+      });
+
+      // Create admin user in Firestore
+      const adminData = {
+        email: adminEmail,
+        firstName: 'System',
+        lastName: 'Admin',
+        uid: userCredential.user.uid,
+        role: 'admin',
+        isAvailable: true
+      };
+
+      console.log('Creating admin Firestore document...', {
+        data: adminData,
+        timestamp: new Date().toISOString()
+      });
+
+      const docRef = await addDoc(usersCollection, adminData);
+
+      console.log('Admin Firestore document created:', {
+        id: docRef.id,
+        timestamp: new Date().toISOString()
+      });
+
+      return true;
+    }
+
+    console.log('Admin user already exists, skipping initialization');
+    return false;
+  } catch (error) {
+    console.error('Error in admin initialization:', {
+      error,
+      errorMessage: error.message,
+      errorCode: error.code,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
+export const initializeSampleData = async () => {
+  try {
+    console.log('Starting sample data initialization...', {
+      timestamp: new Date().toISOString(),
+      database: 'Hakkim-Database'
+    });
+
+    // Check and create sample matches
+    const matchesSnapshot = await getDocs(matchesCollection);
+    console.log('Checked matches collection:', {
+      exists: !matchesSnapshot.empty,
+      count: matchesSnapshot.docs.length,
+      timestamp: new Date().toISOString()
+    });
+
+    if (matchesSnapshot.empty) {
+      const sampleMatches = [
+        {
+          homeTeam: 'Manchester United',
+          awayTeam: 'Liverpool',
+          venue: 'Old Trafford',
+          date: Timestamp.fromDate(new Date('2025-03-01T15:00:00')),
+          league: 'Premier League',
+          status: 'scheduled',
+          mainReferee: 'John Smith',
+          assistantReferee1: 'Mike Johnson',
+          assistantReferee2: 'David Wilson'
+        },
+        {
+          homeTeam: 'Arsenal',
+          awayTeam: 'Chelsea',
+          venue: 'Emirates Stadium',
+          date: Timestamp.fromDate(new Date('2025-03-08T17:30:00')),
+          league: 'Premier League',
+          status: 'scheduled',
+          mainReferee: 'Sarah Parker',
+          assistantReferee1: 'James Brown',
+          assistantReferee2: 'Robert Taylor'
+        }
+      ];
+
+      console.log('Creating sample matches...', {
+        count: sampleMatches.length,
+        timestamp: new Date().toISOString()
+      });
+
+      for (const match of sampleMatches) {
+        const docRef = await addDoc(matchesCollection, match);
+        console.log('Created match:', {
+          id: docRef.id,
+          match: match,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Check and create sample notifications
+    const notificationsSnapshot = await getDocs(notificationsCollection);
+    console.log('Checked notifications collection:', {
+      exists: !notificationsSnapshot.empty,
+      count: notificationsSnapshot.docs.length,
+      timestamp: new Date().toISOString()
+    });
+
+    if (notificationsSnapshot.empty) {
+      const sampleNotifications = [
+        'Welcome to the Football Admin Dashboard!',
+        'New match schedule has been published',
+        'Referee verification system is now active'
+      ];
+
+      console.log('Creating sample notifications...', {
+        count: sampleNotifications.length,
+        timestamp: new Date().toISOString()
+      });
+
+      for (const message of sampleNotifications) {
+        const notificationData = {
+          message,
+          timestamp: Timestamp.fromDate(new Date()),
+          readBy: []
+        };
+        const docRef = await addDoc(notificationsCollection, notificationData);
+        console.log('Created notification:', {
+          id: docRef.id,
+          message: message,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    console.log('Sample data initialization completed successfully', {
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in sample data initialization:', {
+      error,
+      errorMessage: error.message,
+      errorCode: error.code,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
+// Immediately invoke initialization
+console.log('Starting database initialization...', {
+  timestamp: new Date().toISOString(),
+  database: 'Hakkim-Database'
+});
+
+Promise.all([
+  initializeAdminUser(),
+  initializeSampleData()
+]).then(() => {
+  console.log('Database initialization completed', {
+    timestamp: new Date().toISOString(),
+    database: 'Hakkim-Database'
+  });
+}).catch(error => {
+  console.error('Database initialization failed:', {
+    error,
+    timestamp: new Date().toISOString(),
+    database: 'Hakkim-Database'
+  });
+});
 
 export { 
   usersCollection,
