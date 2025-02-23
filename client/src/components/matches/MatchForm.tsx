@@ -11,14 +11,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import type { Referee } from '@/lib/firestore';
+import type { User } from '@/lib/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { getMatches } from '@/lib/firestore';
 
 interface MatchFormProps {
   onSubmit: (data: InsertMatch) => void;
   defaultValues?: Partial<InsertMatch>;
-  referees?: Referee[];
+  referees?: User[];
 }
 
 export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFormProps) {
@@ -228,7 +228,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                     className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                   >
                     <option value="">Select Main Referee</option>
-                    {referees?.map((referee) => (
+                    {referees?.filter(ref => ref.role === 'referee').map((referee) => (
                       <option 
                         key={referee.id} 
                         value={`${referee.firstName} ${referee.lastName}`}
@@ -257,7 +257,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                       className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                     >
                       <option value="">Select Referee</option>
-                      {referees?.map((referee) => (
+                      {referees?.filter(ref => ref.role === 'referee').map((referee) => (
                         <option 
                           key={referee.id} 
                           value={`${referee.firstName} ${referee.lastName}`}
@@ -285,7 +285,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                       className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                     >
                       <option value="">Select Referee</option>
-                      {referees?.map((referee) => (
+                      {referees?.filter(ref => ref.role === 'referee').map((referee) => (
                         <option 
                           key={referee.id} 
                           value={`${referee.firstName} ${referee.lastName}`}

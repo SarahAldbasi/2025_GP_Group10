@@ -17,20 +17,23 @@ import {
 import { db } from './firebase';
 
 // Collection references
-const refereesCollection = collection(db, 'referees');
+const usersCollection = collection(db, 'users');
 const matchesCollection = collection(db, 'matches');
 const notificationsCollection = collection(db, 'notifications');
 const verificationRequestsCollection = collection(db, 'verificationRequests');
 
 // Types
-export interface Referee {
+export interface User {
   id?: string;
+  email: string;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  isAvailable: boolean;
-  verificationStatus: 'pending' | 'approved' | 'rejected';
+  photoURL?: string;
+  uid: string;
+  role: 'admin' | 'referee';
+  phone?: string;
+  isAvailable?: boolean;
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
   documentationUrl?: string;
 }
 
@@ -56,7 +59,7 @@ export interface Notification {
 
 export interface VerificationRequest {
   id?: string;
-  refereeId: string;
+  userId: string;
   submissionDate: Date;
   documentationType: 'license' | 'certificate' | 'other';
   documentationData: {
@@ -74,7 +77,7 @@ export interface VerificationRequest {
 const MOCK_VERIFICATION_REQUESTS: VerificationRequest[] = [
   {
     id: 'ver1',
-    refereeId: 'ref1',
+    userId: 'ref1',
     submissionDate: new Date('2024-02-20'),
     documentationType: 'license',
     documentationData: {
@@ -86,7 +89,7 @@ const MOCK_VERIFICATION_REQUESTS: VerificationRequest[] = [
   },
   {
     id: 'ver2',
-    refereeId: 'ref2',
+    userId: 'ref2',
     submissionDate: new Date('2024-02-21'),
     documentationType: 'certificate',
     documentationData: {
@@ -97,7 +100,7 @@ const MOCK_VERIFICATION_REQUESTS: VerificationRequest[] = [
   }
 ];
 
-// Error handling helper with detailed logging
+// Error handling helper
 const handleFirestoreError = (error: FirestoreError, operation: string) => {
   console.error(`Firestore ${operation} error:`, {
     code: error.code,
@@ -108,29 +111,33 @@ const handleFirestoreError = (error: FirestoreError, operation: string) => {
   throw error;
 };
 
-// Real-time referee subscription with detailed logging
-export const subscribeToReferees = (callback: (referees: Referee[]) => void) => {
-  console.log('Setting up referees subscription...', {
-    collection: 'referees',
+// User operations
+export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (users: User[]) => void) => {
+  console.log('Setting up users subscription...', {
+    role,
     timestamp: new Date().toISOString()
   });
 
+  const q = role 
+    ? query(usersCollection, where('role', '==', role))
+    : usersCollection;
+
   return onSnapshot(
-    refereesCollection, 
+    q, 
     (snapshot) => {
-      console.log('Received referees update:', {
+      console.log('Received users update:', {
         count: snapshot.docs.length,
         timestamp: new Date().toISOString(),
         metadata: snapshot.metadata
       });
-      const referees = snapshot.docs.map(doc => ({
+      const users = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      } as Referee));
-      callback(referees);
+      } as User));
+      callback(users);
     },
     (error) => {
-      console.error('Referees subscription error:', {
+      console.error('Users subscription error:', {
         code: error.code,
         message: error.message,
         timestamp: new Date().toISOString()
@@ -140,22 +147,21 @@ export const subscribeToReferees = (callback: (referees: Referee[]) => void) => 
   );
 };
 
-// Referee operations with detailed logging
-export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Referee> => {
+export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
   try {
-    console.log('Creating new referee:', {
-      data: referee,
+    console.log('Creating new user:', {
+      data: user,
       timestamp: new Date().toISOString()
     });
-    const docRef = await addDoc(refereesCollection, referee);
-    const newReferee = { id: docRef.id, ...referee };
-    console.log('Successfully created referee:', {
+    const docRef = await addDoc(usersCollection, user);
+    const newUser = { id: docRef.id, ...user };
+    console.log('Successfully created user:', {
       id: docRef.id,
       timestamp: new Date().toISOString()
     });
-    return newReferee;
+    return newUser;
   } catch (error) {
-    console.error('Error creating referee:', {
+    console.error('Error creating user:', {
       error,
       timestamp: new Date().toISOString()
     });
@@ -163,14 +169,14 @@ export const createReferee = async (referee: Omit<Referee, 'id'>): Promise<Refer
   }
 };
 
-export const updateReferee = async (id: string, referee: Partial<Referee>): Promise<void> => {
+export const updateUser = async (id: string, user: Partial<User>): Promise<void> => {
   try {
-    console.log('Updating referee:', { id, data: referee, timestamp: new Date().toISOString() });
-    const docRef = doc(refereesCollection, id);
-    await updateDoc(docRef, referee);
-    console.log('Successfully updated referee:', { id, timestamp: new Date().toISOString() });
+    console.log('Updating user:', { id, data: user, timestamp: new Date().toISOString() });
+    const docRef = doc(usersCollection, id);
+    await updateDoc(docRef, user);
+    console.log('Successfully updated user:', { id, timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error('Error updating referee:', {
+    console.error('Error updating user:', {
       error,
       timestamp: new Date().toISOString()
     });
@@ -178,25 +184,25 @@ export const updateReferee = async (id: string, referee: Partial<Referee>): Prom
   }
 };
 
-export const deleteReferee = async (id: string): Promise<void> => {
+export const deleteUser = async (id: string): Promise<void> => {
   try {
-    console.log('Deleting referee:', { id, timestamp: new Date().toISOString() });
+    console.log('Deleting user:', { id, timestamp: new Date().toISOString() });
 
-    // Get the referee's name before deletion to use in notification
-    const refereeDoc = await getDoc(doc(refereesCollection, id));
-    const refereeName = refereeDoc.exists() 
-      ? `${refereeDoc.data().firstName} ${refereeDoc.data().lastName}`
-      : 'Unknown referee';
+    // Get the user's name before deletion
+    const userDoc = await getDoc(doc(usersCollection, id));
+    const userName = userDoc.exists() 
+      ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
+      : 'Unknown user';
 
-    // Delete the referee
-    await deleteDoc(doc(refereesCollection, id));
+    // Delete the user
+    await deleteDoc(doc(usersCollection, id));
 
     // Add notification about deletion
-    await addNotification(`Referee ${refereeName} has been removed from the system`);
+    await addNotification(`${userName} has been removed from the system`);
 
-    console.log('Successfully deleted referee:', { id, timestamp: new Date().toISOString() });
+    console.log('Successfully deleted user:', { id, timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error('Error deleting referee:', {
+    console.error('Error deleting user:', {
       error,
       timestamp: new Date().toISOString()
     });
@@ -204,18 +210,22 @@ export const deleteReferee = async (id: string): Promise<void> => {
   }
 };
 
-export const getReferees = async (): Promise<Referee[]> => {
+export const getUsers = async (role?: 'admin' | 'referee'): Promise<User[]> => {
   try {
-    console.log('Fetching all referees...', { timestamp: new Date().toISOString() });
-    const snapshot = await getDocs(refereesCollection);
-    const referees = snapshot.docs.map(doc => ({
+    console.log('Fetching users...', { role, timestamp: new Date().toISOString() });
+    const q = role 
+      ? query(usersCollection, where('role', '==', role))
+      : usersCollection;
+
+    const snapshot = await getDocs(q);
+    const users = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    } as Referee));
-    console.log('Successfully fetched referees:', { count: referees.length, timestamp: new Date().toISOString() });
-    return referees;
+    } as User));
+    console.log('Successfully fetched users:', { count: users.length, timestamp: new Date().toISOString() });
+    return users;
   } catch (error) {
-    console.error('Error getting referees:', {
+    console.error('Error getting users:', {
       error,
       timestamp: new Date().toISOString()
     });
@@ -420,8 +430,13 @@ export const updateVerificationRequest = async (
   }
 };
 
+// Add getReferees function
+export const getReferees = async (): Promise<User[]> => {
+  return getUsers('referee');
+};
+
 export { 
-  refereesCollection,
+  usersCollection,
   matchesCollection,
   notificationsCollection,
   verificationRequestsCollection,

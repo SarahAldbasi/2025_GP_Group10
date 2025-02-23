@@ -13,15 +13,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
-const refereeSchema = z.object({
+// Updated schema to match User type in firestore.ts
+const refereeFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^05\d{8}$/, "Phone number must be 10 digits and start with 05"),
+  phone: z.string().regex(/^05\d{8}$/, "Phone number must be 10 digits and start with 05").optional(),
   isAvailable: z.boolean().default(true)
 });
 
-type RefereeFormValues = z.infer<typeof refereeSchema>;
+type RefereeFormValues = z.infer<typeof refereeFormSchema>;
 
 interface RefereeFormProps {
   onSubmit: (data: RefereeFormValues) => void;
@@ -31,7 +32,7 @@ interface RefereeFormProps {
 
 export default function RefereeForm({ onSubmit, defaultValues, isSubmitting }: RefereeFormProps) {
   const form = useForm<RefereeFormValues>({
-    resolver: zodResolver(refereeSchema),
+    resolver: zodResolver(refereeFormSchema),
     defaultValues: defaultValues || {
       firstName: '',
       lastName: '',
@@ -118,7 +119,7 @@ export default function RefereeForm({ onSubmit, defaultValues, isSubmitting }: R
 
         <Button 
           type="submit" 
-          className="w-full bg-[#6ab100]"
+          className="w-full bg-[#6ab100] hover:bg-[#5a9700]"
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Saving...' : 'Save Referee'}

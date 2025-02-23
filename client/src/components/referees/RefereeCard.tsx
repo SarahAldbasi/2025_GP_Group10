@@ -1,11 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Mail, Phone } from 'lucide-react';
-import type { Referee } from '@/lib/firestore';
+import type { User as FirebaseUser } from '@/lib/firestore';
 
 interface RefereeCardProps {
-  referee: Referee;
-  onEdit: (referee: Referee) => void;
+  referee: FirebaseUser;
+  onEdit: (referee: FirebaseUser) => void;
   onDelete: (id: string) => void;
 }
 

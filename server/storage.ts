@@ -1,14 +1,15 @@
-import { referees, matches, refereeVerifications, type Referee, type InsertReferee, type Match, type InsertMatch, type RefereeVerification, type InsertRefereeVerification } from "@shared/schema";
+import { users, matches, refereeVerifications, type User, type InsertUser, type Match, type InsertMatch, type RefereeVerification, type InsertRefereeVerification } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  // Referee operations
-  getReferees(): Promise<Referee[]>;
-  getReferee(id: number): Promise<Referee | undefined>;
-  createReferee(referee: InsertReferee): Promise<Referee>;
-  updateReferee(id: number, referee: Partial<Referee>): Promise<Referee | undefined>;
-  deleteReferee(id: number): Promise<boolean>;
+  // User operations
+  getUsers(): Promise<User[]>;
+  getUser(id: number): Promise<User | undefined>;
+  getUsersByRole(role: 'admin' | 'referee'): Promise<User[]>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
 
   // Match operations
   getMatches(): Promise<Match[]>;
@@ -26,39 +27,43 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // Existing Referee operations
-  async getReferees(): Promise<Referee[]> {
-    return await db.select().from(referees);
+  // User operations
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
-  async getReferee(id: number): Promise<Referee | undefined> {
-    const [referee] = await db.select().from(referees).where(eq(referees.id, id));
-    return referee;
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
-  async createReferee(referee: InsertReferee): Promise<Referee> {
-    const [created] = await db.insert(referees).values(referee).returning();
+  async getUsersByRole(role: 'admin' | 'referee'): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [created] = await db.insert(users).values(user).returning();
     return created;
   }
 
-  async updateReferee(id: number, referee: Partial<Referee>): Promise<Referee | undefined> {
+  async updateUser(id: number, user: Partial<User>): Promise<User | undefined> {
     const [updated] = await db
-      .update(referees)
-      .set(referee)
-      .where(eq(referees.id, id))
+      .update(users)
+      .set(user)
+      .where(eq(users.id, id))
       .returning();
     return updated;
   }
 
-  async deleteReferee(id: number): Promise<boolean> {
+  async deleteUser(id: number): Promise<boolean> {
     const [deleted] = await db
-      .delete(referees)
-      .where(eq(referees.id, id))
+      .delete(users)
+      .where(eq(users.id, id))
       .returning();
     return !!deleted;
   }
 
-  // Existing Match operations
+  // Match operations
   async getMatches(): Promise<Match[]> {
     return await db.select().from(matches);
   }
@@ -90,7 +95,7 @@ export class DatabaseStorage implements IStorage {
     return !!deleted;
   }
 
-  // New Verification operations
+  // Verification operations
   async getVerifications(): Promise<RefereeVerification[]> {
     return await db.select().from(refereeVerifications);
   }
