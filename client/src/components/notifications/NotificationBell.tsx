@@ -9,6 +9,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState } from 'react';
 import type { Notification } from '@/lib/firestore';
+import { useAuth } from '@/lib/useAuth';
 
 interface NotificationBellProps {
   notifications: Notification[];
@@ -17,7 +18,10 @@ interface NotificationBellProps {
 
 export default function NotificationBell({ notifications, onMarkAsRead }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const hasUnread = notifications.some(n => !n.read);
+  const { user } = useAuth();
+
+  // Check if there are any unread notifications for the current user
+  const hasUnread = notifications.some(n => user && !(n.readBy || []).includes(user.uid));
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -51,7 +55,9 @@ export default function NotificationBell({ notifications, onMarkAsRead }: Notifi
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className="border-b border-[#2b2b2b] pb-2 last:border-none"
+                    className={`border-b border-[#2b2b2b] pb-2 last:border-none ${
+                      user && !(notification.readBy || []).includes(user.uid) ? 'bg-opacity-10 bg-white' : ''
+                    }`}
                   >
                     <p className="text-sm">{notification.message}</p>
                     <p className="text-xs text-[#787878] mt-1">

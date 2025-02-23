@@ -12,7 +12,7 @@ import {
   type FirestoreError,
   writeBatch,
   getDoc,
-  orderBy
+  arrayUnion
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -46,10 +46,9 @@ export interface Match {
 
 export interface Notification {
   id?: string;
-  userId: string;
   message: string;
   timestamp: Date;
-  read: boolean;
+  readBy: string[]; // Array of user IDs who have read this notification
 }
 
 // Error handling helper with detailed logging
@@ -252,11 +251,8 @@ export const subscribeToNotifications = (userId: string, callback: (notification
     timestamp: new Date().toISOString()
   });
 
-  // For now, let's use a simpler query without ordering to avoid the index requirement
-  const q = query(
-    notificationsCollection,
-    where('userId', '==', userId)
-  );
+  // Query all notifications, filtering will be done client-side
+  const q = query(notificationsCollection);
 
   return onSnapshot(
     q,
@@ -270,9 +266,9 @@ export const subscribeToNotifications = (userId: string, callback: (notification
         .map(doc => ({
           id: doc.id,
           ...doc.data(),
-          timestamp: (doc.data().timestamp as Timestamp).toDate()
+          timestamp: (doc.data().timestamp as Timestamp).toDate(),
+          read: (doc.data().readBy || []).includes(userId)
         } as Notification))
-        // Sort in memory instead of using orderBy
         .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       callback(notifications);
     },
@@ -287,18 +283,16 @@ export const subscribeToNotifications = (userId: string, callback: (notification
   );
 };
 
-export const addNotification = async (userId: string, message: string): Promise<void> => {
+export const addNotification = async (message: string): Promise<void> => {
   try {
     console.log('Creating new notification:', {
-      userId,
       message,
       timestamp: new Date().toISOString()
     });
     await addDoc(notificationsCollection, {
-      userId,
       message,
       timestamp: Timestamp.fromDate(new Date()),
-      read: false
+      readBy: [] // Initialize empty array of users who have read this
     });
   } catch (error) {
     console.error('Error creating notification:', {
@@ -316,12 +310,16 @@ export const markNotificationsAsRead = async (userId: string): Promise<void> => 
       timestamp: new Date().toISOString()
     });
 
-    const q = query(notificationsCollection, where('userId', '==', userId), where('read', '==', false));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(notificationsCollection);
 
     const batch = writeBatch(db);
     snapshot.docs.forEach((doc) => {
-      batch.update(doc.ref, { read: true });
+      const readBy = doc.data().readBy || [];
+      if (!readBy.includes(userId)) {
+        batch.update(doc.ref, {
+          readBy: arrayUnion(userId)
+        });
+      }
     });
 
     await batch.commit();
