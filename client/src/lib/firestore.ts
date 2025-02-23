@@ -252,10 +252,10 @@ export const subscribeToNotifications = (userId: string, callback: (notification
     timestamp: new Date().toISOString()
   });
 
+  // For now, let's use a simpler query without ordering to avoid the index requirement
   const q = query(
     notificationsCollection,
-    where('userId', '==', userId),
-    orderBy('timestamp', 'desc')
+    where('userId', '==', userId)
   );
 
   return onSnapshot(
@@ -266,11 +266,14 @@ export const subscribeToNotifications = (userId: string, callback: (notification
         timestamp: new Date().toISOString(),
         metadata: snapshot.metadata
       });
-      const notifications = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: (doc.data().timestamp as Timestamp).toDate()
-      } as Notification));
+      const notifications = snapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: (doc.data().timestamp as Timestamp).toDate()
+        } as Notification))
+        // Sort in memory instead of using orderBy
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       callback(notifications);
     },
     (error) => {
