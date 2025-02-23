@@ -22,6 +22,7 @@ export default function Matches() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Query hooks remain unchanged
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches'],
     queryFn: getMatches
@@ -32,6 +33,7 @@ export default function Matches() {
     queryFn: getReferees
   });
 
+  // Event handlers remain unchanged
   const handleSubmit = async (data: Omit<Match, 'id'>) => {
     try {
       if (selectedMatch) {
@@ -91,7 +93,7 @@ export default function Matches() {
           <h1 className="text-3xl font-bold">Matches</h1>
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="bg-[#6ab100]"
+            className="bg-[#6ab100] hover:bg-[#5a9700]"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Match

@@ -141,15 +141,15 @@ export default function Profile() {
                 </div>
 
                 <div className="flex gap-4">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="flex-1 bg-[#6ab100]"
                   >
                     Save Changes
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     className="flex-1"
                     onClick={() => setEditMode(false)}
                   >
