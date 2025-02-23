@@ -251,7 +251,7 @@ export const subscribeToNotifications = (userId: string, callback: (notification
     timestamp: new Date().toISOString()
   });
 
-  // Query all notifications, filtering will be done client-side
+  // Query all notifications
   const q = query(notificationsCollection);
 
   return onSnapshot(
@@ -263,12 +263,15 @@ export const subscribeToNotifications = (userId: string, callback: (notification
         metadata: snapshot.metadata
       });
       const notifications = snapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          timestamp: (doc.data().timestamp as Timestamp).toDate(),
-          read: (doc.data().readBy || []).includes(userId)
-        } as Notification))
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            message: data.message,
+            timestamp: data.timestamp.toDate(), // Properly convert Firestore Timestamp to Date
+            readBy: data.readBy || []
+          } as Notification;
+        })
         .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       callback(notifications);
     },

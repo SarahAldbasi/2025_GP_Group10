@@ -30,6 +30,17 @@ export default function NotificationBell({ notifications, onMarkAsRead }: Notifi
     }
   };
 
+  const formatTimestamp = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    }).format(date);
+  };
+
   return (
     <div className="relative">
       <Button
@@ -61,7 +72,7 @@ export default function NotificationBell({ notifications, onMarkAsRead }: Notifi
                   >
                     <p className="text-sm">{notification.message}</p>
                     <p className="text-xs text-[#787878] mt-1">
-                      {notification.timestamp.toLocaleString()}
+                      {formatTimestamp(notification.timestamp)}
                     </p>
                   </div>
                 ))}
