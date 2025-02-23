@@ -8,13 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState } from 'react';
-
-export interface Notification {
-  id: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-}
+import type { Notification } from '@/lib/firestore';
 
 interface NotificationBellProps {
   notifications: Notification[];
@@ -61,7 +55,7 @@ export default function NotificationBell({ notifications, onMarkAsRead }: Notifi
                   >
                     <p className="text-sm">{notification.message}</p>
                     <p className="text-xs text-[#787878] mt-1">
-                      {new Date(notification.timestamp).toLocaleString()}
+                      {notification.timestamp.toLocaleString()}
                     </p>
                   </div>
                 ))}

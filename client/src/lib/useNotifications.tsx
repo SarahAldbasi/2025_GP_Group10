@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import { Notification } from '@/components/notifications/NotificationBell';
+import type { Notification as FirestoreNotification } from '@/lib/firestore';
 import { subscribeToNotifications, markNotificationsAsRead, addNotification as addFirestoreNotification } from '@/lib/firestore';
 import { useAuth } from '@/lib/useAuth';
 
 interface NotificationsContextType {
-  notifications: Notification[];
+  notifications: FirestoreNotification[];
   addNotification: (message: string) => void;
   markAllAsRead: () => void;
 }
@@ -12,7 +12,7 @@ interface NotificationsContextType {
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<FirestoreNotification[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -22,8 +22,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     }
 
     // Subscribe to user-specific notifications
-    const unsubscribe = subscribeToNotifications(user.uid, (notifications) => {
-      setNotifications(notifications);
+    const unsubscribe = subscribeToNotifications(user.uid, (firestoreNotifications) => {
+      setNotifications(firestoreNotifications);
     });
 
     return () => unsubscribe();
