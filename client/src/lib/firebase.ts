@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signOut } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signOut, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence, initializeFirestore, CACHE_SIZE_UNLIMITED, clearIndexedDbPersistence } from "firebase/firestore";
 
 // Clear all Firebase-related caches and storage
@@ -84,20 +84,16 @@ const db = initializeFirestore(app, {
   cacheSizeBytes: CACHE_SIZE_UNLIMITED
 });
 
-// Clear existing Firestore cache
-console.log('Clearing Firestore cache...');
-clearIndexedDbPersistence(db).catch((err) => {
-  console.warn('Error clearing persistence:', err);
-});
-
-// Initialize Auth services
-console.log('Initializing Auth...');
+// Initialize Auth services with persistence
+console.log('Initializing Auth with persistence...');
 const auth = getAuth(app);
-
-// Sign out any existing user to ensure clean state
-signOut(auth).catch((error) => {
-  console.warn('Error signing out existing user:', error);
-});
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log('Auth persistence set to LOCAL');
+  })
+  .catch((error) => {
+    console.error('Error setting auth persistence:', error);
+  });
 
 const googleProvider = new GoogleAuthProvider();
 

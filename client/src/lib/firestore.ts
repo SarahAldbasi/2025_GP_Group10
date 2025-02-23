@@ -119,12 +119,23 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
     timestamp: new Date().toISOString()
   });
 
+  // Create a more specific query that includes verification status
   const q = role 
-    ? query(usersCollection, where('role', '==', role))
-    : usersCollection;
+    ? query(
+        usersCollection,
+        where('role', '==', role),
+        where('verificationStatus', 'in', ['approved', 'pending', 'rejected'])
+      )
+    : query(
+        usersCollection,
+        where('verificationStatus', 'in', ['approved', 'pending', 'rejected'])
+      );
 
   return onSnapshot(
     q, 
+    {
+      includeMetadataChanges: true // This ensures we get all updates
+    },
     (snapshot) => {
       console.log('Received users update:', {
         count: snapshot.docs.length,
@@ -154,8 +165,31 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
       data: user,
       timestamp: new Date().toISOString()
     });
+
+    // If admin is creating a referee, automatically set verification status to approved
+    if (user.role === 'referee' && auth.currentUser) {
+      const adminSnapshot = await getDocs(
+        query(usersCollection, 
+          where('uid', '==', auth.currentUser.uid),
+          where('role', '==', 'admin')
+        )
+      );
+
+      if (!adminSnapshot.empty) {
+        user.verificationStatus = 'approved';
+      }
+    }
+
     const docRef = await addDoc(usersCollection, user);
     const newUser = { id: docRef.id, ...user };
+
+    // Create notification for new referee
+    if (user.role === 'referee') {
+      await addNotification(
+        `New referee ${user.firstName} ${user.lastName} has been added to the system`
+      );
+    }
+
     console.log('Successfully created user:', {
       id: docRef.id,
       timestamp: new Date().toISOString()
