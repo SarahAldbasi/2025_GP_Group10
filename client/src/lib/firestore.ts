@@ -14,7 +14,7 @@ import {
   getDoc,
   arrayUnion
 } from 'firebase/firestore';
-import { db, auth } from './firebase';
+import { db } from './firebase';
 
 // Collection references
 const usersCollection = collection(db, 'users');
@@ -153,15 +153,6 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
         filteredUsers = users;
       }
 
-      console.log('Filtered users data:', {
-        count: filteredUsers.length,
-        users: filteredUsers.map(u => ({
-          id: u.id,
-          role: u.role,
-          isAvailable: u.isAvailable
-        }))
-      });
-
       callback(filteredUsers);
     },
     (error) => {
@@ -176,7 +167,6 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
   );
 };
 
-// Create user with proper defaults
 export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
   try {
     console.log('Creating new user:', {
@@ -523,19 +513,24 @@ export const initializeAdminUser = async () => {
         timestamp: new Date().toISOString()
       });
 
-      const userCredential = await auth.createUserWithEmailAndPassword(adminEmail, adminPassword);
+      // Commented out auth.createUserWithEmailAndPassword because it causes circular dependency
+      // const userCredential = await auth.createUserWithEmailAndPassword(adminEmail, adminPassword);
+      // const adminData = {
+      //   email: adminEmail,
+      //   firstName: 'System',
+      //   lastName: 'Admin',
+      //   uid: userCredential.user.uid,
+      //   role: 'admin',
+      //   isAvailable: true
+      // };
 
-      console.log('Admin auth user created:', {
-        uid: userCredential.user.uid,
-        timestamp: new Date().toISOString()
-      });
 
-      // Create admin user in Firestore
+      // Placeholder for admin creation - needs alternative approach due to circular dependency
       const adminData = {
         email: adminEmail,
         firstName: 'System',
         lastName: 'Admin',
-        uid: userCredential.user.uid,
+        uid: 'admin-uid-placeholder', // Placeholder UID - needs a proper solution
         role: 'admin',
         isAvailable: true
       };
@@ -589,7 +584,7 @@ export const initializeSampleData = async () => {
           homeTeam: 'Manchester United',
           awayTeam: 'Liverpool',
           venue: 'Old Trafford',
-          date: Timestamp.fromDate(new Date('2025-03-01T15:00:00')),
+          date: new Date('2025-03-01T15:00:00'),
           league: 'Premier League',
           status: 'scheduled',
           mainReferee: 'John Smith',
@@ -600,7 +595,7 @@ export const initializeSampleData = async () => {
           homeTeam: 'Arsenal',
           awayTeam: 'Chelsea',
           venue: 'Emirates Stadium',
-          date: Timestamp.fromDate(new Date('2025-03-08T17:30:00')),
+          date: new Date('2025-03-08T17:30:00'),
           league: 'Premier League',
           status: 'scheduled',
           mainReferee: 'Sarah Parker',
