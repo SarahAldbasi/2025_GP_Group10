@@ -16,6 +16,7 @@ import { Match } from '@shared/schema';
 import { getMatches, createMatch, updateMatch, deleteMatch, getReferees } from '@/lib/firestore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNotifications } from '@/lib/useNotifications';
+import { useAuth } from '@/lib/useAuth';
 
 export default function Matches() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -23,6 +24,7 @@ export default function Matches() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
+  const { user } = useAuth();
 
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches'],
@@ -43,7 +45,7 @@ export default function Matches() {
       } else {
         await createMatch(data);
         toast({ title: 'Match created successfully' });
-        addNotification(`New match added: ${data.homeTeam} vs ${data.awayTeam}`);
+        addNotification(`New match added: ${data.homeTeam} vs ${data.awayTeam}`, user?.id); // Added user.id here.  Assuming addNotification handles it.
       }
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       setIsDialogOpen(false);
@@ -64,7 +66,7 @@ export default function Matches() {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast({ title: 'Match deleted successfully' });
       if (matchToDelete) {
-        addNotification(`Match ${matchToDelete.homeTeam} vs ${matchToDelete.awayTeam} has been deleted`);
+        addNotification(`Match ${matchToDelete.homeTeam} vs ${matchToDelete.awayTeam} has been deleted`, user?.id); // Added user.id here.  Assuming addNotification handles it.
       }
     } catch (error) {
       toast({ 

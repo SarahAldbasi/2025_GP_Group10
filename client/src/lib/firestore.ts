@@ -11,13 +11,15 @@ import {
   onSnapshot,
   type FirestoreError,
   writeBatch,
-  getDoc
+  getDoc,
+  orderBy
 } from 'firebase/firestore';
 import { db } from './firebase';
 
 // Collection references
 const refereesCollection = collection(db, 'referees');
 const matchesCollection = collection(db, 'matches');
+const notificationsCollection = collection(db, 'notifications');
 
 // Types
 export interface Referee {
@@ -40,6 +42,14 @@ export interface Match {
   mainReferee: string;
   assistantReferee1?: string | null;
   assistantReferee2?: string | null;
+}
+
+export interface Notification {
+  id?: string;
+  userId: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
 }
 
 // Error handling helper with detailed logging
@@ -234,8 +244,96 @@ export const deleteMatch = async (id: string): Promise<void> => {
   }
 };
 
+// Notification operations
+export const subscribeToNotifications = (userId: string, callback: (notifications: Notification[]) => void) => {
+  console.log('Setting up notifications subscription...', {
+    collection: 'notifications',
+    userId,
+    timestamp: new Date().toISOString()
+  });
+
+  const q = query(
+    notificationsCollection,
+    where('userId', '==', userId),
+    orderBy('timestamp', 'desc')
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      console.log('Received notifications update:', {
+        count: snapshot.docs.length,
+        timestamp: new Date().toISOString(),
+        metadata: snapshot.metadata
+      });
+      const notifications = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: (doc.data().timestamp as Timestamp).toDate()
+      } as Notification));
+      callback(notifications);
+    },
+    (error) => {
+      console.error('Notifications subscription error:', {
+        code: error.code,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+      handleFirestoreError(error as FirestoreError, 'subscription');
+    }
+  );
+};
+
+export const addNotification = async (userId: string, message: string): Promise<void> => {
+  try {
+    console.log('Creating new notification:', {
+      userId,
+      message,
+      timestamp: new Date().toISOString()
+    });
+    await addDoc(notificationsCollection, {
+      userId,
+      message,
+      timestamp: Timestamp.fromDate(new Date()),
+      read: false
+    });
+  } catch (error) {
+    console.error('Error creating notification:', {
+      error,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
+export const markNotificationsAsRead = async (userId: string): Promise<void> => {
+  try {
+    console.log('Marking notifications as read:', {
+      userId,
+      timestamp: new Date().toISOString()
+    });
+
+    const q = query(notificationsCollection, where('userId', '==', userId), where('read', '==', false));
+    const snapshot = await getDocs(q);
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { read: true });
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error marking notifications as read:', {
+      error,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
 export { 
   refereesCollection,
   matchesCollection,
+  notificationsCollection,
   Timestamp
 };
