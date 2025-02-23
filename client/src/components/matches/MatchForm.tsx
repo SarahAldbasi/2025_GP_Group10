@@ -11,11 +11,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import type { Referee } from '@/lib/firestore';
 
 interface MatchFormProps {
   onSubmit: (data: InsertMatch) => void;
   defaultValues?: Partial<InsertMatch>;
-  referees?: { id: number; firstName: string; lastName: string }[];
+  referees?: Referee[];
 }
 
 export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFormProps) {

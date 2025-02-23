@@ -12,8 +12,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Match, Referee } from '@shared/schema';
-import { getMatches, createMatch, updateMatch, deleteMatch } from '@/lib/firestore';
+import { Match } from '@shared/schema';
+import { getMatches, createMatch, updateMatch, deleteMatch, getReferees } from '@/lib/firestore';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function Matches() {
@@ -27,8 +27,9 @@ export default function Matches() {
     queryFn: getMatches
   });
 
-  const { data: referees = [], isLoading: isLoadingReferees } = useQuery<Referee[]>({
-    queryKey: ['referees']
+  const { data: referees = [], isLoading: isLoadingReferees } = useQuery({
+    queryKey: ['referees'],
+    queryFn: getReferees
   });
 
   const handleSubmit = async (data: Omit<Match, 'id'>) => {
