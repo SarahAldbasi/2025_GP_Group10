@@ -15,14 +15,15 @@ import { useToast } from '@/hooks/use-toast';
 import { Match } from '@shared/schema';
 import { getMatches, createMatch, updateMatch, deleteMatch, getReferees } from '@/lib/firestore';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNotifications } from '@/lib/useNotifications';
 
 export default function Matches() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
 
-  // Query hooks remain unchanged
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches'],
     queryFn: getMatches
@@ -33,15 +34,16 @@ export default function Matches() {
     queryFn: getReferees
   });
 
-  // Event handlers remain unchanged
   const handleSubmit = async (data: Omit<Match, 'id'>) => {
     try {
       if (selectedMatch) {
         await updateMatch(selectedMatch.id, data);
         toast({ title: 'Match updated successfully' });
+        addNotification(`Match ${data.homeTeam} vs ${data.awayTeam} has been updated`);
       } else {
         await createMatch(data);
         toast({ title: 'Match created successfully' });
+        addNotification(`New match added: ${data.homeTeam} vs ${data.awayTeam}`);
       }
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       setIsDialogOpen(false);
@@ -57,9 +59,13 @@ export default function Matches() {
 
   const handleDelete = async (id: string) => {
     try {
+      const matchToDelete = matches.find(m => m.id === id);
       await deleteMatch(id);
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast({ title: 'Match deleted successfully' });
+      if (matchToDelete) {
+        addNotification(`Match ${matchToDelete.homeTeam} vs ${matchToDelete.awayTeam} has been deleted`);
+      }
     } catch (error) {
       toast({ 
         variant: "destructive", 

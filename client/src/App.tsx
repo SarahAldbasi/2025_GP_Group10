@@ -3,7 +3,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/lib/useAuth";
-import { useAuth } from "@/lib/useAuth"; // Added import for useAuth
+import { NotificationsProvider } from "@/lib/useNotifications";
+import { useAuth } from "@/lib/useAuth";
 
 // Pages
 import Login from "@/components/auth/Login";
@@ -44,10 +45,12 @@ function Router() {
 export default function App() {
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <Router />
-        <Toaster />
-      </QueryClientProvider>
+      <NotificationsProvider>
+        <QueryClientProvider client={queryClient}>
+          <Router />
+          <Toaster />
+        </QueryClientProvider>
+      </NotificationsProvider>
     </AuthProvider>
   );
 }
