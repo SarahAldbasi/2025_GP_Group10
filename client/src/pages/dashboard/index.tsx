@@ -1,23 +1,71 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Users, Award } from 'lucide-react';
-import type { Match, Referee } from '@shared/schema';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { useAuth } from '@/lib/useAuth';
+
+interface DashboardStats {
+  totalMatches: number;
+  upcomingMatches: number;
+  activeReferees: number;
+}
 
 export default function Dashboard() {
-  const { data: matches } = useQuery<Match[]>({ 
-    queryKey: ['/api/matches']
+  const [stats, setStats] = useState<DashboardStats>({
+    totalMatches: 0,
+    upcomingMatches: 0,
+    activeReferees: 0
   });
 
-  const { data: referees } = useQuery<Referee[]>({
-    queryKey: ['/api/referees']
-  });
+  const { user } = useAuth();
 
-  const stats = {
-    totalMatches: matches?.length || 0,
-    upcomingMatches: matches?.filter(m => m.status === 'scheduled').length || 0,
-    activeReferees: referees?.filter(r => r.isAvailable).length || 0
-  };
+  useEffect(() => {
+    if (!user) {
+      setStats({
+        totalMatches: 0,
+        upcomingMatches: 0,
+        activeReferees: 0
+      });
+      return;
+    }
+
+    // Subscribe to matches collection
+    const matchesUnsubscribe = onSnapshot(
+      collection(db, 'matches'),
+      (snapshot) => {
+        const matches = snapshot.docs.map(doc => doc.data());
+        setStats(prev => ({
+          ...prev,
+          totalMatches: matches.length,
+          upcomingMatches: matches.filter(m => m.status === 'scheduled').length
+        }));
+      },
+      (error) => {
+        console.error('Error fetching matches:', error);
+      }
+    );
+
+    // Subscribe to referees collection
+    const refereesUnsubscribe = onSnapshot(
+      query(collection(db, 'referees'), where('isAvailable', '==', true)),
+      (snapshot) => {
+        setStats(prev => ({
+          ...prev,
+          activeReferees: snapshot.docs.length
+        }));
+      },
+      (error) => {
+        console.error('Error fetching referees:', error);
+      }
+    );
+
+    return () => {
+      matchesUnsubscribe();
+      refereesUnsubscribe();
+    };
+  }, [user]);
 
   return (
     <DashboardLayout>
