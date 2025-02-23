@@ -22,6 +22,7 @@ export const matches = pgTable("matches", {
   date: timestamp("date").notNull(),
   league: text("league").notNull(),
   status: text("status").notNull(),
+  mainReferee: text("main_referee").notNull(),
   assistantReferee1: text("assistant_referee_1"),
   assistantReferee2: text("assistant_referee_2")
 });
@@ -38,7 +39,9 @@ export const referees = pgTable("referees", {
 
 // Export schemas
 export const insertUserSchema = createInsertSchema(users);
-export const insertMatchSchema = createInsertSchema(matches);
+export const insertMatchSchema = createInsertSchema(matches).extend({
+  date: z.coerce.date()
+});
 export const insertRefereeSchema = createInsertSchema(referees).extend({
   phone: z.string().regex(/^05\d{8}$/, "Phone number must be 10 digits and start with 05")
 });

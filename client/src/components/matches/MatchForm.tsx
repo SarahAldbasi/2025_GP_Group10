@@ -3,7 +3,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { insertMatchSchema, type InsertMatch } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -16,7 +15,7 @@ import {
 interface MatchFormProps {
   onSubmit: (data: InsertMatch) => void;
   defaultValues?: Partial<InsertMatch>;
-  referees?: { id: string; firstName: string; lastName: string }[];
+  referees?: { id: number; firstName: string; lastName: string }[];
 }
 
 export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFormProps) {
@@ -26,9 +25,10 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
       homeTeam: defaultValues?.homeTeam || '',
       awayTeam: defaultValues?.awayTeam || '',
       venue: defaultValues?.venue || '',
-      date: defaultValues?.date ? new Date(defaultValues.date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+      date: defaultValues?.date || new Date(),
       league: defaultValues?.league || '',
       status: defaultValues?.status || 'not_started',
+      mainReferee: defaultValues?.mainReferee || '',
       assistantReferee1: defaultValues?.assistantReferee1 || null,
       assistantReferee2: defaultValues?.assistantReferee2 || null
     }
@@ -107,8 +107,8 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                 <FormControl>
                   <Input 
                     type="datetime-local" 
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.target.value)}
+                    value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ''}
+                    onChange={(e) => field.onChange(new Date(e.target.value))}
                     className="bg-[#2b2b2b] text-white border-0" 
                   />
                 </FormControl>
@@ -140,20 +140,20 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <FormField
             control={form.control}
-            name="assistantReferee1"
+            name="mainReferee"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Assistant Referee 1</FormLabel>
+                <FormLabel>Main Referee</FormLabel>
                 <FormControl>
                   <select
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(e.target.value || null)}
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value)}
                     className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                   >
-                    <option value="">Select Referee</option>
+                    <option value="">Select Main Referee</option>
                     {referees?.map((referee) => (
                       <option key={referee.id} value={referee.id}>
                         {`${referee.firstName} ${referee.lastName}`}
@@ -166,30 +166,57 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="assistantReferee2"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Assistant Referee 2</FormLabel>
-                <FormControl>
-                  <select
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(e.target.value || null)}
-                    className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
-                  >
-                    <option value="">Select Referee</option>
-                    {referees?.map((referee) => (
-                      <option key={referee.id} value={referee.id}>
-                        {`${referee.firstName} ${referee.lastName}`}
-                      </option>
-                    ))}
-                  </select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="assistantReferee1"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assistant Referee 1</FormLabel>
+                  <FormControl>
+                    <select
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                      className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
+                    >
+                      <option value="">Select Referee</option>
+                      {referees?.map((referee) => (
+                        <option key={referee.id} value={referee.id}>
+                          {`${referee.firstName} ${referee.lastName}`}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="assistantReferee2"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assistant Referee 2</FormLabel>
+                  <FormControl>
+                    <select
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value || null)}
+                      className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
+                    >
+                      <option value="">Select Referee</option>
+                      {referees?.map((referee) => (
+                        <option key={referee.id} value={referee.id}>
+                          {`${referee.firstName} ${referee.lastName}`}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         <Button 

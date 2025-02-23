@@ -36,6 +36,7 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
           <p>Venue: {match.venue}</p>
           <p>Date: {format(new Date(match.date), 'PPP')}</p>
           <p>Time: {format(new Date(match.date), 'p')}</p>
+          <p>Main Referee: {match.mainReferee}</p>
           {match.assistantReferee1 && <p>Assistant Referee 1: {match.assistantReferee1}</p>}
           {match.assistantReferee2 && <p>Assistant Referee 2: {match.assistantReferee2}</p>}
         </div>
