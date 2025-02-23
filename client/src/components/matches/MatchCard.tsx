@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Match } from '@shared/schema';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 interface MatchCardProps {
   match: Match;
@@ -10,21 +10,25 @@ interface MatchCardProps {
 }
 
 export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
-  const getStatusDisplay = (status: string) => {
+  const getStatusDisplay = (status: string, date: Date) => {
+    // Check if match is within next 3 days
+    const daysUntilMatch = differenceInDays(new Date(date), new Date());
+    const isUpcoming = daysUntilMatch >= 0 && daysUntilMatch <= 3;
+
     switch (status) {
       case 'live':
         return {
-          text: 'Live match',
+          text: 'Live',
           className: 'bg-red-500'
         };
       case 'ended':
         return {
-          text: 'Match ended',
+          text: 'Ended',
           className: 'bg-red-500'
         };
       default:
         return {
-          text: 'Upcoming match',
+          text: isUpcoming ? 'Upcoming' : 'Not Started',
           className: 'bg-[#6ab100]'
         };
     }
@@ -43,17 +47,17 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
     return `/team-logos/${sanitizedName}.svg`;
   };
 
-  const statusInfo = getStatusDisplay(match.status);
+  const statusInfo = getStatusDisplay(match.status, match.date);
 
   return (
-    <Card className="bg-[#212121] text-white rounded-xl relative">
-      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-        <div className={`${statusInfo.className} px-6 py-1 rounded-full text-white text-sm font-medium`}>
+    <Card className="bg-[#212121] text-white rounded-xl">
+      <div className="bg-[#171717] rounded-b-xl">
+        <div className={`${statusInfo.className} px-6 py-1 rounded-b-xl text-white text-sm font-medium text-center`}>
           {statusInfo.text}
         </div>
       </div>
 
-      <CardContent className="p-6 pt-8">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col items-center flex-1">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2">
