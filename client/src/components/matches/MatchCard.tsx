@@ -10,14 +10,23 @@ interface MatchCardProps {
 }
 
 export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
-  const getStatusColor = (status: string) => {
+  const getStatusDisplay = (status: string) => {
     switch (status) {
       case 'live':
-        return 'text-red-500';
+        return {
+          text: 'Live match',
+          className: 'bg-red-500'
+        };
       case 'ended':
-        return 'text-red-500';
+        return {
+          text: 'Match ended',
+          className: 'bg-red-500'
+        };
       default:
-        return 'text-yellow-500';
+        return {
+          text: 'Upcoming match',
+          className: 'bg-[#6ab100]'
+        };
     }
   };
 
@@ -34,15 +43,17 @@ export default function MatchCard({ match, onEdit, onDelete }: MatchCardProps) {
     return `/team-logos/${sanitizedName}.svg`;
   };
 
-  return (
-    <Card className="bg-[#212121] text-white rounded-xl">
-      <CardContent className="p-6">
-        <div className="mb-4">
-          <span className={`${getStatusColor(match.status)} font-medium text-sm`}>
-            {match.status.replace('_', ' ').toUpperCase()}
-          </span>
-        </div>
+  const statusInfo = getStatusDisplay(match.status);
 
+  return (
+    <Card className="bg-[#212121] text-white rounded-xl relative">
+      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+        <div className={`${statusInfo.className} px-6 py-1 rounded-full text-white text-sm font-medium`}>
+          {statusInfo.text}
+        </div>
+      </div>
+
+      <CardContent className="p-6 pt-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col items-center flex-1">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2">
