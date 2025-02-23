@@ -184,6 +184,19 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
       timestamp: new Date().toISOString()
     });
 
+    // Check if user already exists with this UID
+    const existingUserQuery = query(usersCollection, where('uid', '==', user.uid));
+    const existingUserDocs = await getDocs(existingUserQuery);
+
+    if (!existingUserDocs.empty) {
+      console.log('User already exists:', {
+        uid: user.uid,
+        timestamp: new Date().toISOString()
+      });
+      const existingDoc = existingUserDocs.docs[0];
+      return { id: existingDoc.id, ...existingDoc.data() } as User;
+    }
+
     // Set default values for new users
     const userData = {
       ...user,
@@ -194,18 +207,18 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
     const docRef = await addDoc(usersCollection, userData);
     const newUser = { id: docRef.id, ...userData };
 
+    console.log('Successfully created user:', {
+      id: docRef.id,
+      data: newUser,
+      timestamp: new Date().toISOString()
+    });
+
     // Create notification for new referee
     if (user.role === 'referee') {
       await addNotification(
         `New referee ${user.firstName} ${user.lastName} has been added to the system`
       );
     }
-
-    console.log('Successfully created user:', {
-      id: docRef.id,
-      data: newUser,
-      timestamp: new Date().toISOString()
-    });
 
     return newUser;
   } catch (error) {
