@@ -15,7 +15,6 @@ import {
   arrayUnion
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 // Collection references
 const usersCollection = collection(db, 'users');
@@ -119,43 +118,49 @@ export const subscribeToUsers = (role: 'admin' | 'referee' | null, callback: (us
     timestamp: new Date().toISOString()
   });
 
-  let queryConstraints = [];
-
-  // Add role filter if specified
-  if (role) {
-    queryConstraints.push(where('role', '==', role));
-  }
-
-  // Add verification status filter for referees
-  if (role === 'referee') {
-    queryConstraints.push(where('verificationStatus', '==', 'approved'));
-  }
-
-  const q = queryConstraints.length > 0 
-    ? query(usersCollection, ...queryConstraints)
+  // Only filter by role initially
+  const q = role 
+    ? query(usersCollection, where('role', '==', role))
     : query(usersCollection);
 
   return onSnapshot(
     q,
     {
-      includeMetadataChanges: true // This ensures we get all updates
+      includeMetadataChanges: true
     },
     (snapshot) => {
-      console.log('Received users update:', {
-        count: snapshot.docs.length,
-        timestamp: new Date().toISOString(),
-        metadata: snapshot.metadata
-      });
-
       const users = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as User));
 
-      // Filter active referees if needed
-      const filteredUsers = role === 'referee' 
-        ? users.filter(user => user.isAvailable)
+      console.log('Raw users data:', {
+        count: users.length,
+        users: users.map(u => ({
+          id: u.id,
+          role: u.role,
+          isAvailable: u.isAvailable,
+          verificationStatus: u.verificationStatus
+        }))
+      });
+
+      // For referees, filter based on verification status and availability
+      const filteredUsers = role === 'referee'
+        ? users.filter(user => 
+            (user.verificationStatus === 'approved' || !user.verificationStatus) && 
+            (user.isAvailable === undefined || user.isAvailable === true)
+          )
         : users;
+
+      console.log('Filtered users data:', {
+        count: filteredUsers.length,
+        users: filteredUsers.map(u => ({
+          id: u.id,
+          role: u.role,
+          isAvailable: u.isAvailable,
+          verificationStatus: u.verificationStatus
+        }))
+      });
 
       callback(filteredUsers);
     },
