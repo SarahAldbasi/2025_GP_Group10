@@ -49,7 +49,9 @@ const requiredEnvVars = [
   'VITE_FIREBASE_API_KEY',
   'VITE_FIREBASE_PROJECT_ID',
   'VITE_FIREBASE_APP_ID',
-  'VITE_FIREBASE_MESSAGING_SENDER_ID'
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_STORAGE_BUCKET'
 ];
 
 const missingVars = requiredEnvVars.filter(
@@ -62,21 +64,19 @@ if (missingVars.length > 0) {
   );
 }
 
-// Log Firebase configuration (without sensitive data)
-console.log('Initializing Firebase with project:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
-
+// Initialize Firebase with new configuration
+console.log('Initializing Firebase with new configuration...');
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase with a unique name
-console.log('Initializing Firebase app with new configuration...');
-const app = initializeApp(firebaseConfig, 'hakkim-database');
+// Initialize Firebase with a unique name and time stamp to avoid conflicts
+const app = initializeApp(firebaseConfig, `football-admin-${Date.now()}`);
 
 // Initialize Firestore with better offline support
 console.log('Initializing Firestore with offline support...');
