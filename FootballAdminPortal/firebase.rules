@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // During reset and initialization, allow all operations
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
