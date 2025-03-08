@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
 import { initializeFirestore, CACHE_SIZE_UNLIMITED, collection, query, where, getDocs, addDoc } from "firebase/firestore";
 
 
@@ -91,29 +91,5 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-const googleProvider = new GoogleAuthProvider();
 
-export { app as default, auth, db, googleProvider };
-
-// import { initializeApp } from "firebase/app";
-// import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
-// import { initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
-
-// const firebaseConfig = {
-//   apiKey: "AIzaSyC16V8PSX1lRNH-uNDMIBqxxcqrxP9tJIE",
-//   authDomain: "hakkim-database-42b05.firebaseapp.com",
-//   projectId: "hakkim-database-42b05",
-//   storageBucket: "hakkim-database-42b05.firebasestorage.app",
-//   messagingSenderId: "30678186224",
-//   appId: "1:30678186224:web:92261f806c80be87f72a35"
-// };
-
-// const app = initializeApp(firebaseConfig);
-// const db = initializeFirestore(app, {
-//   cacheSizeBytes: CACHE_SIZE_UNLIMITED
-// });
-// const auth = getAuth(app);
-// setPersistence(auth, browserLocalPersistence);
-// const googleProvider = new GoogleAuthProvider();
-
-// export { app as default, auth, db, googleProvider };
+export { app as default, auth, db };
