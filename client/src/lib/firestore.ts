@@ -39,15 +39,15 @@ export interface User {
 
 export interface Match {
   id?: string;
-  homeTeam: string;
-  awayTeam: string;
+  homeTeam: string | { name: string; logo: string };
+  awayTeam: string | { name: string; logo: string };
   venue: string;
   date: Date;
   league: string;
   status: string;
-  mainReferee: string;
-  assistantReferee1?: string | null;
-  assistantReferee2?: string | null;
+  mainReferee: string | { id: string; name: string; image: string };
+  assistantReferee1?: string | { id: string; name: string; image: string } | null;
+  assistantReferee2?: string | { id: string; name: string; image: string } | null;
 }
 
 export interface Notification {
@@ -109,6 +109,31 @@ const handleFirestoreError = (error: FirestoreError, operation: string) => {
     timestamp: new Date().toISOString()
   });
   throw error;
+};
+
+// Get a specific user by ID
+export const getUserById = async (userId: string): Promise<User | null> => {
+  try {
+    console.log('Fetching user by ID:', { userId, timestamp: new Date().toISOString() });
+    const docRef = doc(db, 'users', userId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      const userData = { id: docSnap.id, ...docSnap.data() } as User;
+      console.log('Successfully fetched user:', { id: userId, timestamp: new Date().toISOString() });
+      return userData;
+    } else {
+      console.log('User not found:', { id: userId, timestamp: new Date().toISOString() });
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting user by ID:', {
+      error,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
 };
 
 // User operations
@@ -191,7 +216,7 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
     const userData = {
       ...user,
       isAvailable: true, // Always set isAvailable to true for new users
-      verificationStatus: user.role === 'referee' ? 'approved' : undefined // Auto-approve referees
+      verificationStatus: user.role === 'referee' ? ('approved' as 'pending' | 'approved' | 'rejected') : 'pending' // Auto-approve referees, ensure pending for others
     };
 
     const docRef = await addDoc(usersCollection, userData);
@@ -331,10 +356,28 @@ export const updateMatch = async (id: string, match: Partial<Match>): Promise<vo
   try {
     console.log('Updating match:', { id, data: match, timestamp: new Date().toISOString() });
     const docRef = doc(matchesCollection, id);
-    const updateData = { ...match };
-    if (match.date) {
-      updateData.date = Timestamp.fromDate(match.date);
-    }
+        // Create a clean copy of the data to update
+        const updateData: Record<string, any> = {};
+    
+        // Copy all properties except date for now
+        Object.keys(match).forEach(key => {
+          if (key !== 'date') {
+            updateData[key] = match[key as keyof Match];
+          }
+        });
+        
+        // Handle date conversion separately
+        if (match.date) {
+          // Make sure we have a proper Date object
+          const dateObj = match.date instanceof Date 
+            ? match.date 
+            : new Date(match.date);
+          
+          // Only convert if it's a valid date
+          if (!isNaN(dateObj.getTime())) {
+            updateData.date = Timestamp.fromDate(dateObj);
+          }
+        }
     await updateDoc(docRef, updateData);
     console.log('Successfully updated match:', { id, timestamp: new Date().toISOString() });
   } catch (error) {
@@ -581,26 +624,62 @@ export const initializeSampleData = async () => {
     if (matchesSnapshot.empty) {
       const sampleMatches = [
         {
-          homeTeam: 'Manchester United',
-          awayTeam: 'Liverpool',
           venue: 'Old Trafford',
           date: new Date('2025-03-01T15:00:00'),
           league: 'Premier League',
           status: 'scheduled',
-          mainReferee: 'John Smith',
-          assistantReferee1: 'Mike Johnson',
-          assistantReferee2: 'David Wilson'
+          homeTeam: {
+            name: 'Manchester United',
+            logo: 'https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg'
+          },
+          awayTeam: {
+            name: 'Liverpool',
+            logo: 'https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg'
+          },
+          mainReferee: {
+            id: 'ref123',
+            name: 'John Smith',
+            image: 'https://example.com/referee-images/john-smith.png'
+          },
+          assistantReferee1: {
+            id: 'ref124',
+            name: 'Mike Johnson',
+            image: 'https://example.com/referee-images/mike-johnson.png'
+          },
+          assistantReferee2: {
+            id: 'ref125',
+            name: 'David Wilson',
+            image: 'https://example.com/referee-images/david-wilson.png'
+          }
         },
         {
-          homeTeam: 'Arsenal',
-          awayTeam: 'Chelsea',
           venue: 'Emirates Stadium',
           date: new Date('2025-03-08T17:30:00'),
           league: 'Premier League',
           status: 'scheduled',
-          mainReferee: 'Sarah Parker',
-          assistantReferee1: 'James Brown',
-          assistantReferee2: 'Robert Taylor'
+          homeTeam: {
+            name: 'Arsenal',
+            logo: 'https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg'
+          },
+          awayTeam: {
+            name: 'Chelsea',
+            logo: 'https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg'
+          },
+          mainReferee: {
+            id: 'ref126',
+            name: 'Sarah Parker',
+            image: 'https://example.com/referee-images/sarah-parker.png'
+          },
+          assistantReferee1: {
+            id: 'ref127',
+            name: 'James Brown',
+            image: 'https://example.com/referee-images/james-brown.png'
+          },
+          assistantReferee2: {
+            id: 'ref128',
+            name: 'Robert Taylor',
+            image: 'https://example.com/referee-images/robert-taylor.png'
+          }
         }
       ];
 
@@ -660,8 +739,8 @@ export const initializeSampleData = async () => {
   } catch (error) {
     console.error('Error in sample data initialization:', {
       error,
-      errorMessage: error.message,
-      errorCode: error.code,
+      errorMessage: (error as Error).message,
+      errorCode: (error as any).code,
       timestamp: new Date().toISOString()
     });
     throw error;
@@ -685,6 +764,8 @@ Promise.all([
 }).catch(error => {
   console.error('Database initialization failed:', {
     error,
+    errorMessage: (error as Error).message,
+    errorCode: (error as any).code,
     timestamp: new Date().toISOString(),
     database: 'Hakkim-Database'
   });

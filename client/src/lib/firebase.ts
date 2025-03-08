@@ -1,36 +1,43 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, initializeFirestore, CACHE_SIZE_UNLIMITED, collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import { initializeFirestore, CACHE_SIZE_UNLIMITED, collection, query, where, getDocs, addDoc } from "firebase/firestore";
 
-// Initialize Firebase with new configuration
-console.log('Initializing Firebase with new configuration...');
+
+console.log("Initializing Firebase with new configuration...");
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyC16V8PSX1lRNH-uNDMIBqxxcqrxP9tJIE",
+  authDomain: "hakkim-database-42b05.firebaseapp.com",
+  projectId: "hakkim-database-42b05",
+  storageBucket: "hakkim-database-42b05.firebasestorage.app",
+  messagingSenderId: "30678186224",
+  appId: "1:30678186224:web:92261f806c80be87f72a35"
 };
 
-// Initialize Firebase with a unique name
+// Check if Firebase config is properly loaded
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase API key is missing. Make sure your .env file is properly configured.");
+}
+
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with better offline support
-console.log('Initializing Firestore with offline support...');
+// Initialize Firestore with offline capabilities
+console.log("Initializing Firestore with offline support...");
 const db = initializeFirestore(app, {
   cacheSizeBytes: CACHE_SIZE_UNLIMITED
 });
 
 // Initialize Auth services with persistence
-console.log('Initializing Auth with persistence...');
+console.log("Initializing Auth with persistence...");
 const auth = getAuth(app);
+
+// Set persistence asynchronously
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
-    console.log('Auth persistence set to LOCAL');
+    console.log("Auth persistence set successfully");
   })
   .catch((error) => {
-    console.error('Error setting auth persistence:', error);
+    console.error("Error setting auth persistence:", error);
   });
 
 // Create a function to handle user document creation
@@ -53,8 +60,8 @@ async function createUserDocument(user: any) {
       email: user.email || '',
       firstName: user.displayName?.split(' ')[0] || '',
       lastName: user.displayName?.split(' ')[1] || '',
-      photoURL: user.photoURL || null, // Changed from undefined to null
-      role: 'admin', // Default to admin role
+      photoURL: user.photoURL || null, 
+      role: 'admin', 
       isAvailable: true,
       verificationStatus: 'pending'
     };
@@ -87,3 +94,26 @@ onAuthStateChanged(auth, async (user) => {
 const googleProvider = new GoogleAuthProvider();
 
 export { app as default, auth, db, googleProvider };
+
+// import { initializeApp } from "firebase/app";
+// import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
+// import { initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
+
+// const firebaseConfig = {
+//   apiKey: "AIzaSyC16V8PSX1lRNH-uNDMIBqxxcqrxP9tJIE",
+//   authDomain: "hakkim-database-42b05.firebaseapp.com",
+//   projectId: "hakkim-database-42b05",
+//   storageBucket: "hakkim-database-42b05.firebasestorage.app",
+//   messagingSenderId: "30678186224",
+//   appId: "1:30678186224:web:92261f806c80be87f72a35"
+// };
+
+// const app = initializeApp(firebaseConfig);
+// const db = initializeFirestore(app, {
+//   cacheSizeBytes: CACHE_SIZE_UNLIMITED
+// });
+// const auth = getAuth(app);
+// setPersistence(auth, browserLocalPersistence);
+// const googleProvider = new GoogleAuthProvider();
+
+// export { app as default, auth, db, googleProvider };

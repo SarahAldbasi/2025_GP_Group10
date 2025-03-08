@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { auth, googleProvider } from '@/lib/firebase';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { SiGoogle } from 'react-icons/si';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -28,26 +27,18 @@ export default function Login() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      setLocation('/dashboard');
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to sign in with Google"
-      });
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#171717] bg-[url('/ball-net.png')] bg-cover bg-center">
-      <img src="/Hakkim_white.png" alt="Hakkim Logo" className="absolute top-4 left-4 w-32" />
-
-      <Card className="w-full max-w-md mx-4 bg-[#212121] rounded-xl border-0">
+    <div className="min-h-screen flex items-center justify-center relative">
+      {/* Background with opacity */}
+      <div className="absolute inset-0 bg-[#171717] bg-[url('/assets/ball-net.png')] bg-cover bg-center opacity-35"></div>
+      
+      {/* Content positioned above the background */}
+      <div className="relative z-10 flex items-center justify-center w-full">
+      <img src="/assets/Hakkim_white_temp.png" alt="Hakkim Logo" className="fixed top-8 left-8 w-48" />
+        
+        <Card className="w-full max-w-md mx-4 bg-[#212121] rounded-xl border-0">
         <CardContent className="pt-6">
-          <h1 className="text-2xl font-bold text-white text-center mb-6">Welcome!</h1>
+          <h1 className="text-2xl font-bold text-white mb-6">Welcome Back!</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
@@ -79,17 +70,6 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-[#787878] mb-4">or login with</p>
-            <div className="flex justify-center">
-              <button
-                onClick={handleGoogleSignIn}
-                className="w-12 h-12 rounded-full bg-[#2b2b2b] flex items-center justify-center hover:bg-[#3b3b3b] transition-colors"
-              >
-                <SiGoogle className="w-5 h-5 text-white" />
-              </button>
-            </div>
-          </div>
 
           <Link href="/signup">
             <span className="block text-center mt-6 text-[#787878] cursor-pointer">
@@ -97,7 +77,8 @@ export default function Login() {
             </span>
           </Link>
         </CardContent>
-      </Card>
-    </div>
+        </Card>
+     </div>
+     </div>
   );
 }

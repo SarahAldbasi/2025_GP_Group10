@@ -40,7 +40,7 @@ export default function RefereeCard({ referee, onEdit, onDelete }: RefereeCardPr
           <Button
             variant="outline"
             onClick={() => onEdit(referee)}
-            className="flex-1"
+            className="flex-1 bg-[#6ab100]"
           >
             Edit
           </Button>

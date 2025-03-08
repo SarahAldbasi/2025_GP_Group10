@@ -1,3 +1,4 @@
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { insertMatchSchema, type InsertMatch } from '@shared/schema';
@@ -17,7 +18,7 @@ import { getMatches } from '@/lib/firestore';
 
 interface MatchFormProps {
   onSubmit: (data: InsertMatch) => void;
-  defaultValues?: Partial<InsertMatch>;
+  defaultValues?: Partial<InsertMatch> & { id?: string };
   referees?: User[];
 }
 
@@ -29,14 +30,21 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
   });
 
   const validateForm = (data: InsertMatch) => {
-    // Check for duplicate referee assignments within the same match
-    const refereeAssignments = [
-      data.mainReferee,
-      data.assistantReferee1,
-      data.assistantReferee2
-    ].filter(Boolean);
+    // Extract referee IDs or names for comparison
+    const getRefereeId = (ref: any) => {
+      if (!ref) return null;
+      if (typeof ref === 'string') return ref;
+      return ref.id || ref.name;
+    };
 
+    // Check for duplicate referee assignments within the same match
+    const mainRef = getRefereeId(data.mainReferee);
+    const assistant1 = getRefereeId(data.assistantReferee1);
+    const assistant2 = getRefereeId(data.assistantReferee2);
+    
+    const refereeAssignments = [mainRef, assistant1, assistant2].filter(Boolean);
     const uniqueReferees = new Set(refereeAssignments);
+    
     if (uniqueReferees.size !== refereeAssignments.length) {
       return {
         mainReferee: 'A referee cannot be assigned to multiple roles in the same match'
@@ -53,17 +61,23 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
 
       // Check if matches are on the same day and within 3 hours
       if (hourDiff < 3) {
-        const referees = [
-          match.mainReferee,
-          match.assistantReferee1,
-          match.assistantReferee2
-        ].filter(Boolean);
-
-        return [
-          data.mainReferee,
-          data.assistantReferee1,
-          data.assistantReferee2
-        ].some(referee => referee && referees.includes(referee));
+        // Extract referee IDs from the existing match
+        const getMatchRefereeId = (ref: any) => {
+          if (!ref) return null;
+          if (typeof ref === 'string') return ref;
+          return ref.id || ref.name;
+        };
+        
+        const matchMainRef = getMatchRefereeId(match.mainReferee);
+        const matchAssistant1 = getMatchRefereeId(match.assistantReferee1);
+        const matchAssistant2 = getMatchRefereeId(match.assistantReferee2);
+        
+        const matchReferees = [matchMainRef, matchAssistant1, matchAssistant2].filter(Boolean);
+        
+        // Check if any referee is assigned to both matches
+        return [mainRef, assistant1, assistant2].some(ref => 
+          ref && matchReferees.some(matchRef => matchRef === ref)
+        );
       }
       return false;
     });
@@ -77,19 +91,30 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
     return {};
   };
 
-  const form = useForm<InsertMatch>({
-    resolver: zodResolver(insertMatchSchema),
-    defaultValues: {
-      homeTeam: defaultValues?.homeTeam || '',
-      awayTeam: defaultValues?.awayTeam || '',
+  // Prepare default values for the form
+  const prepareDefaultValues = () => {
+    const getDefaultValue = (field: any, defaultField: string) => {
+      if (!field) return defaultField;
+      if (typeof field === 'string') return field;
+      return field.name || field.id || defaultField;
+    };
+
+    return {
+      homeTeam: getDefaultValue(defaultValues?.homeTeam, ''),
+      awayTeam: getDefaultValue(defaultValues?.awayTeam, ''),
       venue: defaultValues?.venue || '',
       date: defaultValues?.date || new Date(),
       league: defaultValues?.league || '',
       status: defaultValues?.status || 'not_started',
-      mainReferee: defaultValues?.mainReferee || '',
-      assistantReferee1: defaultValues?.assistantReferee1 || null,
-      assistantReferee2: defaultValues?.assistantReferee2 || null
-    }
+      mainReferee: getDefaultValue(defaultValues?.mainReferee, ''),
+      assistantReferee1: defaultValues?.assistantReferee1 ? getDefaultValue(defaultValues.assistantReferee1, '') : null,
+      assistantReferee2: defaultValues?.assistantReferee2 ? getDefaultValue(defaultValues.assistantReferee2, '') : null
+    };
+  };
+
+  const form = useForm<InsertMatch>({
+    resolver: zodResolver(insertMatchSchema),
+    defaultValues: prepareDefaultValues()
   });
 
   const handleSubmit = async (data: InsertMatch) => {
@@ -103,6 +128,16 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
     onSubmit(data);
   };
 
+  // Format date string for datetime-local input
+  const formatDateForInput = (date: Date | string | null | undefined): string => {
+    if (!date) return new Date().toISOString().slice(0, 16);
+    
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return new Date().toISOString().slice(0, 16);
+    
+    return dateObj.toISOString().slice(0, 16);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto px-1">
@@ -114,7 +149,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
               <FormItem>
                 <FormLabel>Home Team</FormLabel>
                 <FormControl>
-                  <Input {...field} className="bg-[#2b2b2b] text-white border-0" />
+                  <Input {...field} value={field.value.name || ''} className="bg-[#2b2b2b] text-white border-0" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -128,7 +163,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
               <FormItem>
                 <FormLabel>Away Team</FormLabel>
                 <FormControl>
-                  <Input {...field} className="bg-[#2b2b2b] text-white border-0" />
+                  <Input {...field} value={field.value.name || ''} className="bg-[#2b2b2b] text-white border-0" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -176,7 +211,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                 <FormControl>
                   <Input 
                     type="datetime-local" 
-                    value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)}
+                    value={formatDateForInput(field.value)}
                     onChange={(e) => {
                       const date = new Date(e.target.value);
                       if (!isNaN(date.getTime())) {
@@ -223,7 +258,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                 <FormLabel>Main Referee</FormLabel>
                 <FormControl>
                   <select
-                    value={field.value}
+                    value={typeof field.value === 'string' ? field.value : field.value?.name || field.value?.id || ''}
                     onChange={(e) => field.onChange(e.target.value)}
                     className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                   >
@@ -252,7 +287,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                   <FormLabel>Assistant Referee 1</FormLabel>
                   <FormControl>
                     <select
-                      value={field.value || ''}
+                      value={field.value ? (typeof field.value === 'string' ? field.value : field.value?.name || field.value?.id || '') : ''}
                       onChange={(e) => field.onChange(e.target.value || null)}
                       className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                     >
@@ -280,7 +315,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                   <FormLabel>Assistant Referee 2</FormLabel>
                   <FormControl>
                     <select
-                      value={field.value || ''}
+                      value={field.value ? (typeof field.value === 'string' ? field.value : field.value?.name || field.value?.id || '') : ''}
                       onChange={(e) => field.onChange(e.target.value || null)}
                       className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                     >

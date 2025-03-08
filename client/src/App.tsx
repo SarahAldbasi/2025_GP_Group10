@@ -15,6 +15,8 @@ import Matches from "@/pages/matches";
 import Referees from "@/pages/referees";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
+import RefereeDetails from './pages/referees/[id]';
+import VerificationPage from './pages/verification';
 
 function PrivateRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
@@ -35,6 +37,8 @@ function Router() {
       <Route path="/dashboard" component={() => <PrivateRoute component={Dashboard} />} />
       <Route path="/matches" component={() => <PrivateRoute component={Matches} />} />
       <Route path="/referees" component={() => <PrivateRoute component={Referees} />} />
+      <Route path="/referees/:id" component={RefereeDetails} />
+      <Route path="/verification" component={VerificationPage} />
       <Route path="/profile" component={() => <PrivateRoute component={Profile} />} />
       <Route path="/" component={() => <PrivateRoute component={Dashboard} />} />
       <Route component={NotFound} />

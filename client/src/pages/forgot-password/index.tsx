@@ -29,13 +29,18 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#171717] bg-[url('/ball-net.svg')] bg-cover bg-center">
-      <img src="/Hakkim_white.svg" alt="Hakkim Logo" className="absolute top-4 left-4 w-32" />
+    <div className="min-h-screen flex items-center justify-center relative">
+      {/* Background with opacity */}
+      <div className="absolute inset-0 bg-[#171717] bg-[url('/assets/ball-net.png')] bg-cover bg-center opacity-35"></div>
+      
+      {/* Content positioned above the background */}
+      <div className="relative z-10 flex items-center justify-center w-full">
+      <img src="/assets/Hakkim_white_temp.png" alt="Hakkim Logo" className="fixed top-8 left-8 w-48" />
 
       <Card className="w-full max-w-md mx-4 bg-[#212121] rounded-xl border-0">
         <CardContent className="pt-6">
-          <h1 className="text-2xl font-bold text-white text-center mb-6">Reset Password</h1>
-          <p className="text-[#787878] text-center mb-6">
+          <h1 className="text-2xl font-bold text-white mb-6">Reset Password</h1>
+          <p className="text-[#787878] mb-6">
             Enter your email address and we'll send you instructions to reset your password.
           </p>
 
@@ -63,6 +68,7 @@ export default function ForgotPassword() {
           </Link>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

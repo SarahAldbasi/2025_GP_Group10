@@ -73,7 +73,7 @@ export default function Profile() {
             <CardTitle className="flex justify-between items-center">
               <span>Profile Information</span>
               {!editMode && (
-                <Button onClick={() => setEditMode(true)} variant="outline">
+                <Button onClick={() => setEditMode(true)} variant="outline" className='bg-[#6ab100]'>
                   Edit Profile
                 </Button>
               )}
