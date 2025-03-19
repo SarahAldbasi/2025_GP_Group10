@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
-import { initializeFirestore, CACHE_SIZE_UNLIMITED, collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, initializeFirestore, CACHE_SIZE_UNLIMITED, collection, query, where, getDocs, addDoc } from "firebase/firestore";
 
 
 console.log("Initializing Firebase with new configuration...");
@@ -14,30 +14,25 @@ const firebaseConfig = {
   appId: "1:30678186224:web:92261f806c80be87f72a35"
 };
 
-// Check if Firebase config is properly loaded
-if (!firebaseConfig.apiKey) {
-  console.error("Firebase API key is missing. Make sure your .env file is properly configured.");
-}
-
+// Initialize Firebase with a unique name
+console.log('Firebase config:', { projectId: firebaseConfig.projectId, authDomain: firebaseConfig.authDomain });
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with offline capabilities
-console.log("Initializing Firestore with offline support...");
+// Initialize Firestore with better offline support
+console.log('Initializing Firestore with offline support...');
 const db = initializeFirestore(app, {
   cacheSizeBytes: CACHE_SIZE_UNLIMITED
 });
 
 // Initialize Auth services with persistence
-console.log("Initializing Auth with persistence...");
+console.log('Initializing Auth with persistence...');
 const auth = getAuth(app);
-
-// Set persistence asynchronously
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
-    console.log("Auth persistence set successfully");
+    console.log('Auth persistence set to LOCAL');
   })
   .catch((error) => {
-    console.error("Error setting auth persistence:", error);
+    console.error('Error setting auth persistence:', error);
   });
 
 // Create a function to handle user document creation
@@ -60,8 +55,8 @@ async function createUserDocument(user: any) {
       email: user.email || '',
       firstName: user.displayName?.split(' ')[0] || '',
       lastName: user.displayName?.split(' ')[1] || '',
-      photoURL: user.photoURL || null, 
-      role: 'admin', 
+      photoURL: user.photoURL || null,
+      role: 'admin', // Default to admin role
       isAvailable: true,
       verificationStatus: 'pending'
     };
@@ -91,5 +86,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+const googleProvider = new GoogleAuthProvider();
 
-export { app as default, auth, db };
+export { app as default, auth, db, googleProvider };

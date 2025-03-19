@@ -23,11 +23,11 @@ export const insertMatchSchema = z.object({
   league: z.string(),
   homeTeam: z.object({
     name: z.string(),
-    logo: z.string().optional()
+    logo: z.string().url("Invalid logo URL").optional()
   }),
   awayTeam: z.object({
     name: z.string(),
-    logo: z.string().optional()
+    logo: z.string().url("Invalid logo URL").optional()
   }),
   mainReferee: z.object({
     id: z.string(),

@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { insertMatchSchema, type InsertMatch } from '@shared/schema';
@@ -41,10 +40,10 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
     const mainRef = getRefereeId(data.mainReferee);
     const assistant1 = getRefereeId(data.assistantReferee1);
     const assistant2 = getRefereeId(data.assistantReferee2);
-    
+
     const refereeAssignments = [mainRef, assistant1, assistant2].filter(Boolean);
     const uniqueReferees = new Set(refereeAssignments);
-    
+
     if (uniqueReferees.size !== refereeAssignments.length) {
       return {
         mainReferee: 'A referee cannot be assigned to multiple roles in the same match'
@@ -67,15 +66,15 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
           if (typeof ref === 'string') return ref;
           return ref.id || ref.name;
         };
-        
+
         const matchMainRef = getMatchRefereeId(match.mainReferee);
         const matchAssistant1 = getMatchRefereeId(match.assistantReferee1);
         const matchAssistant2 = getMatchRefereeId(match.assistantReferee2);
-        
+
         const matchReferees = [matchMainRef, matchAssistant1, matchAssistant2].filter(Boolean);
-        
+
         // Check if any referee is assigned to both matches
-        return [mainRef, assistant1, assistant2].some(ref => 
+        return [mainRef, assistant1, assistant2].some(ref =>
           ref && matchReferees.some(matchRef => matchRef === ref)
         );
       }
@@ -114,7 +113,17 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
 
   const form = useForm<InsertMatch>({
     resolver: zodResolver(insertMatchSchema),
-    defaultValues: prepareDefaultValues()
+    defaultValues: defaultValues || {
+      homeTeam: { name: '', logo: undefined },
+      awayTeam: { name: '', logo: undefined },
+      venue: '',
+      date: new Date(),
+      league: '',
+      status: 'not_started',
+      mainReferee: { id: '', name: '' },
+      assistantReferee1: undefined,
+      assistantReferee2: undefined
+    }
   });
 
   const handleSubmit = async (data: InsertMatch) => {
@@ -131,10 +140,10 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
   // Format date string for datetime-local input
   const formatDateForInput = (date: Date | string | null | undefined): string => {
     if (!date) return new Date().toISOString().slice(0, 16);
-    
+
     const dateObj = date instanceof Date ? date : new Date(date);
     if (isNaN(dateObj.getTime())) return new Date().toISOString().slice(0, 16);
-    
+
     return dateObj.toISOString().slice(0, 16);
   };
 
@@ -142,33 +151,95 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto px-1">
         <div className="grid grid-cols-2 gap-3">
-          <FormField
-            control={form.control}
-            name="homeTeam"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Home Team</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value.name || ''} className="bg-[#2b2b2b] text-white border-0" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name="homeTeam"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Home Team</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={typeof field.value === 'string' ? field.value : field.value?.name || ''}
+                      onChange={(e) => {
+                        const currentValue = typeof field.value === 'object' ? field.value : { name: '', logo: undefined };
+                        field.onChange({ ...currentValue, name: e.target.value });
+                      }}
+                      className="bg-[#2b2b2b] text-white border-0"
+                      placeholder="Team name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="homeTeam"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Home Team Logo URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={typeof field.value === 'object' ? field.value?.logo || '' : ''}
+                      onChange={(e) => {
+                        const currentValue = typeof field.value === 'object' ? field.value : { name: '', logo: null };
+                        field.onChange({ ...currentValue, logo: e.target.value || null });
+                      }}
+                      className="bg-[#2b2b2b] text-white border-0"
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-          <FormField
-            control={form.control}
-            name="awayTeam"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Away Team</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value.name || ''} className="bg-[#2b2b2b] text-white border-0" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name="awayTeam"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Away Team</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={typeof field.value === 'string' ? field.value : field.value?.name || ''}
+                      onChange={(e) => {
+                        const currentValue = typeof field.value === 'object' ? field.value : { name: '', logo: null };
+                        field.onChange({ ...currentValue, name: e.target.value });
+                      }}
+                      className="bg-[#2b2b2b] text-white border-0"
+                      placeholder="Team name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="awayTeam"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Away Team Logo URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={typeof field.value === 'object' ? field.value?.logo || '' : ''}
+                      onChange={(e) => {
+                        const currentValue = typeof field.value === 'object' ? field.value : { name: '', logo: null };
+                        field.onChange({ ...currentValue, logo: e.target.value || null });
+                      }}
+                      className="bg-[#2b2b2b] text-white border-0"
+                      placeholder="https://example.com/logo.png"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -209,8 +280,8 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
               <FormItem>
                 <FormLabel>Date and Time</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="datetime-local" 
+                  <Input
+                    type="datetime-local"
                     value={formatDateForInput(field.value)}
                     onChange={(e) => {
                       const date = new Date(e.target.value);
@@ -218,7 +289,7 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                         field.onChange(date);
                       }
                     }}
-                    className="bg-[#2b2b2b] text-white border-0" 
+                    className="bg-[#2b2b2b] text-white border-0"
                   />
                 </FormControl>
                 <FormMessage />
@@ -258,15 +329,23 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                 <FormLabel>Main Referee</FormLabel>
                 <FormControl>
                   <select
-                    value={typeof field.value === 'string' ? field.value : field.value?.name || field.value?.id || ''}
-                    onChange={(e) => field.onChange(e.target.value)}
+                    value={typeof field.value === 'string' ? field.value : field.value?.id || ''}
+                    onChange={(e) => {
+                      const referee = referees?.find(r => r.id === e.target.value);
+                      if (referee) {
+                        field.onChange({
+                          id: referee.id,
+                          name: `${referee.firstName} ${referee.lastName}`
+                        });
+                      }
+                    }}
                     className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                   >
                     <option value="">Select Main Referee</option>
                     {referees?.filter(ref => ref.role === 'referee').map((referee) => (
-                      <option 
-                        key={referee.id} 
-                        value={`${referee.firstName} ${referee.lastName}`}
+                      <option
+                        key={referee.id}
+                        value={referee.id}
                       >
                         {`${referee.firstName} ${referee.lastName}`}
                       </option>
@@ -287,15 +366,27 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                   <FormLabel>Assistant Referee 1</FormLabel>
                   <FormControl>
                     <select
-                      value={field.value ? (typeof field.value === 'string' ? field.value : field.value?.name || field.value?.id || '') : ''}
-                      onChange={(e) => field.onChange(e.target.value || null)}
+                      value={field.value ? (typeof field.value === 'string' ? field.value : field.value?.id || '') : ''}
+                      onChange={(e) => {
+                        if (!e.target.value) {
+                          field.onChange(null);
+                          return;
+                        }
+                        const referee = referees?.find(r => r.id === e.target.value);
+                        if (referee) {
+                          field.onChange({
+                            id: referee.id,
+                            name: `${referee.firstName} ${referee.lastName}`
+                          });
+                        }
+                      }}
                       className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                     >
                       <option value="">Select Referee</option>
                       {referees?.filter(ref => ref.role === 'referee').map((referee) => (
-                        <option 
-                          key={referee.id} 
-                          value={`${referee.firstName} ${referee.lastName}`}
+                        <option
+                          key={referee.id}
+                          value={referee.id}
                         >
                           {`${referee.firstName} ${referee.lastName}`}
                         </option>
@@ -315,15 +406,27 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
                   <FormLabel>Assistant Referee 2</FormLabel>
                   <FormControl>
                     <select
-                      value={field.value ? (typeof field.value === 'string' ? field.value : field.value?.name || field.value?.id || '') : ''}
-                      onChange={(e) => field.onChange(e.target.value || null)}
+                      value={field.value ? (typeof field.value === 'string' ? field.value : field.value?.id || '') : ''}
+                      onChange={(e) => {
+                        if (!e.target.value) {
+                          field.onChange(null);
+                          return;
+                        }
+                        const referee = referees?.find(r => r.id === e.target.value);
+                        if (referee) {
+                          field.onChange({
+                            id: referee.id,
+                            name: `${referee.firstName} ${referee.lastName}`
+                          });
+                        }
+                      }}
                       className="w-full bg-[#2b2b2b] text-white border-0 rounded-lg h-10 px-3"
                     >
                       <option value="">Select Referee</option>
                       {referees?.filter(ref => ref.role === 'referee').map((referee) => (
-                        <option 
-                          key={referee.id} 
-                          value={`${referee.firstName} ${referee.lastName}`}
+                        <option
+                          key={referee.id}
+                          value={referee.id}
                         >
                           {`${referee.firstName} ${referee.lastName}`}
                         </option>
@@ -337,8 +440,8 @@ export default function MatchForm({ onSubmit, defaultValues, referees }: MatchFo
           </div>
         </div>
 
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="w-full bg-[#6ab100] hover:bg-[#5a9700] mt-6"
         >
           Save Match

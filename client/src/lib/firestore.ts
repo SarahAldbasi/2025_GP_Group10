@@ -12,7 +12,8 @@ import {
   type FirestoreError,
   writeBatch,
   getDoc,
-  arrayUnion
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -35,12 +36,13 @@ export interface User {
   isAvailable: boolean; 
   verificationStatus: 'pending' | 'approved' | 'rejected';
   documentationUrl?: string;
+  fcmTokens?: string[]; // Array of FCM tokens for multiple devices
 }
 
 export interface Match {
   id?: string;
-  homeTeam: string | { name: string; logo: string };
-  awayTeam: string | { name: string; logo: string };
+  homeTeam: string | { name: string; logo?: string };
+  awayTeam: string | { name: string; logo?: string };
   venue: string;
   date: Date;
   league: string;
@@ -55,16 +57,18 @@ export interface Notification {
   message: string;
   timestamp: Date;
   readBy: string[]; 
+  targetUserIds?: string[];
+  notificationType?: 'web' | 'mobile'; // Add notification type
 }
 
+// Update the VerificationRequest interface
 export interface VerificationRequest {
   id?: string;
   userId: string;
   submissionDate: Date;
-  documentationType: 'license' | 'certificate' | 'other';
   documentationData: {
     description: string;
-    fileType: string;
+    fileUrl: string; // URL to the uploaded document in Firebase Storage
     additionalNotes?: string;
   };
   status: 'pending' | 'approved' | 'rejected';
@@ -73,32 +77,6 @@ export interface VerificationRequest {
   reviewNotes?: string;
 }
 
-// Mock verification requests for static feature
-const MOCK_VERIFICATION_REQUESTS: VerificationRequest[] = [
-  {
-    id: 'ver1',
-    userId: 'ref1',
-    submissionDate: new Date('2024-02-20'),
-    documentationType: 'license',
-    documentationData: {
-      description: 'Official Referee License',
-      fileType: 'pdf',
-      additionalNotes: '5 years of experience'
-    },
-    status: 'pending'
-  },
-  {
-    id: 'ver2',
-    userId: 'ref2',
-    submissionDate: new Date('2024-02-21'),
-    documentationType: 'certificate',
-    documentationData: {
-      description: 'Referee Training Certificate',
-      fileType: 'pdf'
-    },
-    status: 'pending'
-  }
-];
 
 // Error handling helper
 const handleFirestoreError = (error: FirestoreError, operation: string) => {
@@ -117,7 +95,7 @@ export const getUserById = async (userId: string): Promise<User | null> => {
     console.log('Fetching user by ID:', { userId, timestamp: new Date().toISOString() });
     const docRef = doc(db, 'users', userId);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       const userData = { id: docSnap.id, ...docSnap.data() } as User;
       console.log('Successfully fetched user:', { id: userId, timestamp: new Date().toISOString() });
@@ -333,6 +311,11 @@ export const getMatches = async (): Promise<Match[]> => {
   }
 };
 
+// Helper function to get team name
+const getTeamName = (team: string | { name: string; logo?: string }): string => {
+  return typeof team === 'string' ? team : team.name;
+};
+
 export const createMatch = async (match: Omit<Match, 'id'>): Promise<Match> => {
   try {
     console.log('Creating new match:', { data: match, timestamp: new Date().toISOString() });
@@ -342,6 +325,39 @@ export const createMatch = async (match: Omit<Match, 'id'>): Promise<Match> => {
     };
     const docRef = await addDoc(matchesCollection, matchData);
     console.log('Successfully created match:', { id: docRef.id, timestamp: new Date().toISOString() });
+
+    // Send notification to assigned referees only
+    const assignedRefereeIds: string[] = [];
+
+    // Add main referee if it's an object with id
+    if (typeof match.mainReferee === 'object' && match.mainReferee?.id) {
+      assignedRefereeIds.push(match.mainReferee.id);
+    }
+
+    // Add assistant referees if they're objects with ids
+    if (typeof match.assistantReferee1 === 'object' && match.assistantReferee1?.id) {
+      assignedRefereeIds.push(match.assistantReferee1.id);
+    }
+    if (typeof match.assistantReferee2 === 'object' && match.assistantReferee2?.id) {
+      assignedRefereeIds.push(match.assistantReferee2.id);
+    }
+
+    // Send referee assignment notification (mobile app only)
+    if (assignedRefereeIds.length > 0) {
+      await addNotification(
+        `You have been assigned to referee the match: ${getTeamName(match.homeTeam)} vs ${getTeamName(match.awayTeam)} on ${match.date.toLocaleDateString()}`,
+        assignedRefereeIds,
+        'mobile' // Specify as mobile notification
+      );
+    }
+
+    // Send a general notification about new match creation (visible to admins)
+    await addNotification(
+      `New match added: ${getTeamName(match.homeTeam)} vs ${getTeamName(match.awayTeam)}`,
+      undefined,
+      'web' // Specify as web notification
+    );
+
     return { id: docRef.id, ...match };
   } catch (error) {
     console.error('Error creating match:', {
@@ -356,30 +372,105 @@ export const updateMatch = async (id: string, match: Partial<Match>): Promise<vo
   try {
     console.log('Updating match:', { id, data: match, timestamp: new Date().toISOString() });
     const docRef = doc(matchesCollection, id);
-        // Create a clean copy of the data to update
-        const updateData: Record<string, any> = {};
-    
-        // Copy all properties except date for now
-        Object.keys(match).forEach(key => {
-          if (key !== 'date') {
-            updateData[key] = match[key as keyof Match];
-          }
-        });
-        
-        // Handle date conversion separately
-        if (match.date) {
-          // Make sure we have a proper Date object
-          const dateObj = match.date instanceof Date 
-            ? match.date 
-            : new Date(match.date);
-          
-          // Only convert if it's a valid date
-          if (!isNaN(dateObj.getTime())) {
-            updateData.date = Timestamp.fromDate(dateObj);
-          }
-        }
+
+    // Get the current match data to compare changes
+    const currentMatchSnap = await getDoc(docRef);
+    const currentMatch = currentMatchSnap.data();
+
+    // Create a clean copy of the data to update
+    const updateData: Record<string, any> = {};
+
+    // Copy all properties except date
+    Object.keys(match).forEach(key => {
+      if (key !== 'date') {
+        updateData[key] = match[key as keyof Match];
+      }
+    });
+
+    // Handle date conversion separately
+    if (match.date) {
+      const dateObj = match.date instanceof Date 
+        ? match.date 
+        : new Date(match.date);
+
+      if (!isNaN(dateObj.getTime())) {
+        updateData.date = Timestamp.fromDate(dateObj);
+      }
+    }
+
     await updateDoc(docRef, updateData);
     console.log('Successfully updated match:', { id, timestamp: new Date().toISOString() });
+
+    // Get all assigned referee IDs (current and previous)
+    const newAssignedRefereeIds: string[] = [];
+    const previousRefereeIds: string[] = [];
+
+    // Helper function to extract referee ID
+    const getRefereeId = (referee: any): string | null => {
+      if (typeof referee === 'object' && referee?.id) return referee.id;
+      return null;
+    };
+
+    // Get previous referee IDs
+    const previousMainId = getRefereeId(currentMatch?.mainReferee);
+    const previousAssist1Id = getRefereeId(currentMatch?.assistantReferee1);
+    const previousAssist2Id = getRefereeId(currentMatch?.assistantReferee2);
+    if (previousMainId) previousRefereeIds.push(previousMainId);
+    if (previousAssist1Id) previousRefereeIds.push(previousAssist1Id);
+    if (previousAssist2Id) previousRefereeIds.push(previousAssist2Id);
+
+    // Get new referee IDs
+    if (match.mainReferee) {
+      const newMainId = getRefereeId(match.mainReferee);
+      if (newMainId) newAssignedRefereeIds.push(newMainId);
+    }
+    if (match.assistantReferee1) {
+      const newAssist1Id = getRefereeId(match.assistantReferee1);
+      if (newAssist1Id) newAssignedRefereeIds.push(newAssist1Id);
+    }
+    if (match.assistantReferee2) {
+      const newAssist2Id = getRefereeId(match.assistantReferee2);
+      if (newAssist2Id) newAssignedRefereeIds.push(newAssist2Id);
+    }
+
+    // Send notifications for newly assigned referees only
+    const newlyAssigned = newAssignedRefereeIds.filter(id => !previousRefereeIds.includes(id));
+    if (newlyAssigned.length > 0 && currentMatch) {
+      await addNotification(
+        `You have been assigned to referee the match: ${getTeamName(currentMatch.homeTeam)} vs ${getTeamName(currentMatch.awayTeam)} on ${match.date?.toLocaleDateString() || currentMatch.date.toDate().toLocaleDateString()}`,
+        newlyAssigned,
+        'mobile' // Specify as mobile notification
+      );
+    }
+
+    // If there are any changes that affect match details
+    if (match.date || match.venue || match.homeTeam || match.awayTeam || match.league) {
+      const changes = [];
+      if (match.date) changes.push('date');
+      if (match.venue) changes.push('venue');
+      if (match.homeTeam || match.awayTeam) changes.push('teams');
+      if (match.league) changes.push('league');
+
+      if (changes.length > 0 && currentMatch) {
+        // Send update notification to admins (web notification)
+        await addNotification(
+          `Match details have been updated (${changes.join(', ')}) for ${getTeamName(match.homeTeam || currentMatch.homeTeam)} vs ${getTeamName(match.awayTeam || currentMatch.awayTeam)}`,
+          undefined,
+          'web'
+        );
+
+        // Send specific notification to all assigned referees (mobile notification)
+        const allRefereeIds = [...new Set([...previousRefereeIds, ...newAssignedRefereeIds])];
+        if (allRefereeIds.length > 0) {
+          await addNotification(
+            `Match details have been updated for your assigned match: ${getTeamName(match.homeTeam || currentMatch.homeTeam)} vs ${getTeamName(match.awayTeam || currentMatch.awayTeam)}`,
+            allRefereeIds,
+            'mobile'
+          );
+        }
+      }
+    }
+
   } catch (error) {
     console.error('Error updating match:', {
       error,
@@ -430,7 +521,9 @@ export const subscribeToNotifications = (userId: string, callback: (notification
             id: doc.id,
             message: data.message,
             timestamp: data.timestamp.toDate(), 
-            readBy: data.readBy || []
+            readBy: data.readBy || [],
+            targetUserIds: data.targetUserIds || [],
+            notificationType: data.notificationType
           } as Notification;
         })
         .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -447,22 +540,103 @@ export const subscribeToNotifications = (userId: string, callback: (notification
   );
 };
 
-export const addNotification = async (message: string): Promise<void> => {
+export const addFCMToken = async (userId: string, token: string): Promise<void> => {
   try {
-    console.log('Creating new notification:', {
-      message,
+    console.log('Adding FCM token:', {
+      userId,
+      token: token.substring(0, 10) + '...', // Log only part of the token for security
       timestamp: new Date().toISOString()
     });
 
-    // Store the actual message text instead of IDs
+    const userRef = doc(usersCollection, userId);
+    await updateDoc(userRef, {
+      fcmTokens: arrayUnion(token)
+    });
+
+    console.log('Successfully added FCM token');
+  } catch (error) {
+    console.error('Error adding FCM token:', {
+      error,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
+export const removeFCMToken = async (userId: string, token: string): Promise<void> => {
+  try {
+    console.log('Removing FCM token:', {
+      userId,
+      token: token.substring(0, 10) + '...',
+      timestamp: new Date().toISOString()
+    });
+
+    const userRef = doc(usersCollection, userId);
+    await updateDoc(userRef, {
+      fcmTokens: arrayRemove(token)
+    });
+
+    console.log('Successfully removed FCM token');
+  } catch (error) {
+    console.error('Error removing FCM token:', {
+      error,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
+
+export const addNotification = async (
+  message: string, 
+  targetUserIds?: string[], 
+  notificationType: 'web' | 'mobile' = 'web'
+): Promise<void> => {
+  try {
+    console.log('Creating new notification:', {
+      message,
+      targetUserIds,
+      notificationType,
+      timestamp: new Date().toISOString()
+    });
+
+    // Store the notification in Firestore
     const notificationData = {
       message,
       timestamp: Timestamp.fromDate(new Date()),
-      readBy: [] 
+      readBy: [],
+      targetUserIds: targetUserIds || [],
+      notificationType // Add notification type to stored data
     };
 
-    await addDoc(notificationsCollection, notificationData);
-    console.log('Successfully created notification');
+    const notificationRef = await addDoc(notificationsCollection, notificationData);
+    console.log('Successfully created notification:', notificationRef.id);
+
+    // If specific users are targeted, get their FCM tokens
+    if (targetUserIds && targetUserIds.length > 0) {
+      const userSnapshots = await Promise.all(
+        targetUserIds.map(userId => getDoc(doc(usersCollection, userId)))
+      );
+
+      // Collect all FCM tokens
+      const fcmTokens = userSnapshots
+        .filter(snap => snap.exists())
+        .map(snap => snap.data().fcmTokens || [])
+        .flat();
+
+      if (fcmTokens.length > 0) {
+        console.log('Found FCM tokens for notification:', {
+          count: fcmTokens.length,
+          timestamp: new Date().toISOString()
+        });
+
+        // Here you would typically call your Firebase Cloud Function or backend endpoint
+        // to send the actual push notifications using the FCM tokens
+        // This will be implemented in the next step
+      }
+    }
   } catch (error) {
     console.error('Error creating notification:', {
       error,
@@ -502,25 +676,81 @@ export const markNotificationsAsRead = async (userId: string): Promise<void> => 
 };
 
 // Verification operations
+// Remove mock data and update verification functions
 export const getVerificationRequests = async (): Promise<VerificationRequest[]> => {
-  // For static feature, return mock data
-  return MOCK_VERIFICATION_REQUESTS;
+  try {
+    console.log('Fetching verification requests...', {
+      timestamp: new Date().toISOString()
+    });
+
+    const snapshot = await getDocs(verificationRequestsCollection);
+    const requests = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      submissionDate: doc.data().submissionDate.toDate(),
+      reviewDate: doc.data().reviewDate?.toDate() || null
+    })) as VerificationRequest[];
+
+    console.log('Successfully fetched verification requests:', {
+      count: requests.length,
+      timestamp: new Date().toISOString()
+    });
+
+    return requests;
+  } catch (error) {
+    console.error('Error fetching verification requests:', error);
+    throw error;
+  }
 };
 
 export const updateVerificationRequest = async (
   id: string,
   update: Partial<VerificationRequest>
 ): Promise<void> => {
-  // For static feature, log the update
-  console.log('Updating verification request:', { id, update });
+  try {
+    console.log('Updating verification request:', {
+      id,
+      update,
+      timestamp: new Date().toISOString()
+    });
 
-  // If it's an approval/rejection, create a notification
-  if (update.status === 'approved' || update.status === 'rejected') {
-    const request = MOCK_VERIFICATION_REQUESTS.find(r => r.id === id);
-    if (request) {
-      const message = `Referee verification request ${id} has been ${update.status}`;
-      await addNotification(message);
+    const docRef = doc(verificationRequestsCollection, id);
+
+    // Get the request data to update user's verification status
+    const request = (await getDoc(docRef)).data() as VerificationRequest;
+
+    // Update the verification request
+    await updateDoc(docRef, {
+      ...update,
+      reviewDate: update.status ? Timestamp.fromDate(new Date()) : undefined
+    });
+
+    // If status is being updated, also update the user's verification status
+    if (update.status && request.userId) {
+      const userRef = doc(usersCollection, request.userId);
+      await updateDoc(userRef, {
+        verificationStatus: update.status
+      });
+
+      // Create notification for the user
+      const statusMessage = update.status === 'approved' 
+        ? 'Your verification request has been approved!'
+        : 'Your verification request has been rejected. Please check the review notes for more information.';
+
+      await addNotification(
+        statusMessage,
+        [request.userId],
+        'mobile'
+      );
     }
+
+    console.log('Successfully updated verification request:', {
+      id,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating verification request:', error);
+    throw error;
   }
 };
 
@@ -628,14 +858,8 @@ export const initializeSampleData = async () => {
           date: new Date('2025-03-01T15:00:00'),
           league: 'Premier League',
           status: 'scheduled',
-          homeTeam: {
-            name: 'Manchester United',
-            logo: 'https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg'
-          },
-          awayTeam: {
-            name: 'Liverpool',
-            logo: 'https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg'
-          },
+          homeTeam: { name: 'Manchester United' },
+          awayTeam: { name: 'Liverpool' },
           mainReferee: {
             id: 'ref123',
             name: 'John Smith',
@@ -657,14 +881,8 @@ export const initializeSampleData = async () => {
           date: new Date('2025-03-08T17:30:00'),
           league: 'Premier League',
           status: 'scheduled',
-          homeTeam: {
-            name: 'Arsenal',
-            logo: 'https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg'
-          },
-          awayTeam: {
-            name: 'Chelsea',
-            logo: 'https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg'
-          },
+          homeTeam: { name: 'Arsenal' },
+          awayTeam: { name: 'Chelsea' },
           mainReferee: {
             id: 'ref126',
             name: 'Sarah Parker',
