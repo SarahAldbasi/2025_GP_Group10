@@ -21,8 +21,7 @@ To install and run the Hakkim SmartWatch APK using an Android Emulator:
 4. Launch **Wear OS emulator** from the Device Manager.
 5. Use the terminal or command line to install the APK:
 
-   
    adb install path/to/Group8_Hakkim_SmartwatchApp.apk
-
+6. Once the installation is complete, you can find the SmartWatch app in the emulator's app drawer (app menu). Tap on it to open and start using the app.
 
 2025_GP_Group10
