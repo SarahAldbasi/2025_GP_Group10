@@ -6,12 +6,14 @@
 
 ## **✨ Features**  
 
-- ⌚ **Instant Smartwatch Alerts** – Get real-time notifications for **goals, out-of-play events, and corner kick violations**.  
-- ⚽ **Ball Tracking** – Uses **Ultra-Wideband (UWB) technology** for precise positioning.  
-- 📱 **Mobile App** – Manage **match assignments** and **review events** efficiently.
+- **Instant Smartwatch Alerts** – Get real-time notifications for **goals, out-of-play events, and corner kick violations**.  
+- **Ball Tracking** – Uses **Ultra-Wideband (UWB) technology** for precise positioning.  
+- **Mobile App** – Manage **match assignments** and **review events** efficiently.
 
 ---
-## Launching Instructions for Hakkim SmartWatch and Mobile App APK
+## Launching Instructions for Hakkim System
+
+- ### SmartWatch and Mobile App APK
 
 To install and run the APKs using an Android Emulator:
 
@@ -23,5 +25,11 @@ To install and run the APKs using an Android Emulator:
 
    ex: adb install path/to/G#8_Hakkim_SmartwatchApp.apk
 6. Once the installation is complete, you can find the app in the emulator's app menu. Tap on it to open and start using the app.
+
+- ### Web App
+
+ You can open the URL using private\incognito mode 
+
+🔗 **URL**: https://hakkim-database-42b05.web.app/
 
 2025_GP_Group10
