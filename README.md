@@ -11,17 +11,17 @@
 - 📱 **Mobile App** – Manage **match assignments** and **review events** efficiently.
 
 ---
-## Launching Instructions for Hakkim SmartWatch APK
+## Launching Instructions for Hakkim SmartWatch and Mobile App APK
 
-To install and run the Hakkim SmartWatch APK using an Android Emulator:
+To install and run the APKs using an Android Emulator:
 
 1. Download the `HakkimSmartWatch.zip` file from this repository.
-2. Extract the ZIP file to access the `Group8_Hakkim_SmartwatchApp.apk`.
+2. Extract the ZIP file to access the `G#8_Hakkim_SmartwatchApp.apk or G#8_Hakkim_MobileApp.apk`.
 3. Open **Android Studio**.
-4. Launch **Wear OS emulator** from the Device Manager.
+4. Launch **Wear OS emulator** for SmartWatch and **Phone emulator** for Mobile App from the Device Manager.
 5. Use the terminal or command line to install the APK:
 
-   adb install path/to/Group8_Hakkim_SmartwatchApp.apk
-6. Once the installation is complete, you can find the SmartWatch app in the emulator's app drawer (app menu). Tap on it to open and start using the app.
+   ex: adb install path/to/G#8_Hakkim_SmartwatchApp.apk
+6. Once the installation is complete, you can find the app in the emulator's app menu. Tap on it to open and start using the app.
 
 2025_GP_Group10
