@@ -652,15 +652,22 @@ export const createMatch = async (match: Omit<Match, "id">): Promise<Match> => {
         existingDateObj = new Date(existingDate);
       }
       
-      // Calculate time difference in hours
+      // Calculate time difference in hours and minutes
       const timeDiffMs = Math.abs(matchDate.getTime() - existingDateObj.getTime());
       const timeDiffHours = timeDiffMs / (60 * 60 * 1000);
+      const timeDiffMinutes = timeDiffMs / (60 * 1000);
       
-      // If time difference is less than 2 hours, check for conflicts
+      const existingVenue = (existingMatch.venue || "").toLowerCase().trim();
+      const sameVenue = venue === existingVenue;
+      
+      // Rule: Same venue + same date + same time (within 5 minutes) -> conflict regardless of teams
+      // This prevents two matches at the same venue at the exact same time
+      if (sameVenue && timeDiffMinutes < 5) {
+        return { sameVenue, existingVenue, sameTime: true, oneTeamMatch: false };
+      }
+      
+      // If time difference is less than 2 hours, check for other conflicts
       if (timeDiffHours < 2) {
-        const existingVenue = (existingMatch.venue || "").toLowerCase().trim();
-        const sameVenue = venue === existingVenue;
-        
         // Check if teams match (case-insensitive)
         const existingHomeName = (typeof existingHomeTeam === "string" 
           ? existingHomeTeam 
@@ -697,6 +704,13 @@ export const createMatch = async (match: Omit<Match, "id">): Promise<Match> => {
 
     if (conflictingMatch) {
       const conflictDetails = conflictingMatch as any;
+      
+      // Rule: Same venue + same date + same time (within 5 minutes) -> conflict regardless of teams
+      if (conflictDetails.sameTime && conflictDetails.sameVenue) {
+        const error = new Error("A match already exists at this venue, date, and time");
+        (error as any).code = "DUPLICATE_MATCH_SAME_VENUE_TIME";
+        throw error;
+      }
       
       // Rule: Same venue, same time, one team matches -> not allowed
       if (conflictDetails.oneTeamMatch && conflictDetails.sameVenue) {
@@ -1012,6 +1026,13 @@ export const updateMatch = async (
 
       if (conflictingMatch) {
         const conflictDetails = conflictingMatch as any;
+        
+        // Rule: Same venue + same date + same time (within 5 minutes) -> conflict regardless of teams
+        if (conflictDetails.sameTime && conflictDetails.sameVenue) {
+          const error = new Error("A match already exists at this venue, date, and time");
+          (error as any).code = "DUPLICATE_MATCH_SAME_VENUE_TIME";
+          throw error;
+        }
         
         // Rule: Same venue, same time, one team matches -> not allowed
         if (conflictDetails.oneTeamMatch && conflictDetails.sameVenue) {

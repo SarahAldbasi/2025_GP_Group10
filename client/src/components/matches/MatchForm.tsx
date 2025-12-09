@@ -94,16 +94,23 @@ export default function MatchForm({ onSubmit, defaultValues, referees, balls }: 
         ? existingAwayTeam 
         : existingAwayTeam?.name || "").toLowerCase().trim();
       
-      // Calculate time difference in hours
+      // Calculate time difference in hours and minutes
       const existingMatchTime = new Date(match.date).getTime();
       const timeDiffMs = Math.abs(matchTime - existingMatchTime);
       const timeDiffHours = timeDiffMs / (60 * 60 * 1000);
+      const timeDiffMinutes = timeDiffMs / (60 * 1000);
       
-      // If time difference is less than 2 hours, check for conflicts
+      const existingVenue = (match.venue || "").toLowerCase().trim();
+      const sameVenue = venue === existingVenue;
+      
+      // Rule: Same venue + same date + same time (within 5 minutes) -> conflict regardless of teams
+      // This prevents two matches at the same venue at the exact same time
+      if (sameVenue && timeDiffMinutes < 5) {
+        return { sameVenue, existingVenue, sameTime: true, oneTeamMatch: false };
+      }
+      
+      // If time difference is less than 2 hours, check for other conflicts
       if (timeDiffHours < 2) {
-        const existingVenue = (match.venue || "").toLowerCase().trim();
-        const sameVenue = venue === existingVenue;
-        
         // Check if both teams match (exact or swapped)
         const bothTeamsMatch = 
           (existingHomeName === homeTeamName && existingAwayName === awayTeamName) ||
@@ -132,6 +139,13 @@ export default function MatchForm({ onSubmit, defaultValues, referees, balls }: 
 
     if (duplicateMatch) {
       const conflictDetails = duplicateMatch as any;
+      
+      // Rule: Same venue + same date + same time (within 5 minutes) -> conflict regardless of teams
+      if (conflictDetails.sameTime && conflictDetails.sameVenue) {
+        return {
+          date: 'A match already exists at this venue, date, and time'
+        };
+      }
       
       // Rule: Same venue, same time, one team matches -> not allowed
       if (conflictDetails.oneTeamMatch && conflictDetails.sameVenue) {

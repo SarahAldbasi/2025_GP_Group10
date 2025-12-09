@@ -182,7 +182,9 @@ export default function Matches() {
   } catch (error: any) {
     console.error(error);
     let errorMessage = "Please try again";
-    if (error?.code === "DUPLICATE_MATCH") {
+    if (error?.code === "DUPLICATE_MATCH_SAME_VENUE_TIME") {
+      errorMessage = "A match already exists at this venue, date, and time";
+    } else if (error?.code === "DUPLICATE_MATCH") {
       errorMessage = "Match already exists";
     } else if (error?.code === "DUPLICATE_MATCH_DIFFERENT_VENUE") {
       errorMessage = "A match with the same teams at the same time already exists at a different venue";

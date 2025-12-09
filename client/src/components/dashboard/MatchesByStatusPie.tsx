@@ -140,7 +140,9 @@ export default function MatchesByStatusPie({ matches: propMatches }: MatchesBySt
     } catch (e: any) {
       console.error(e);
       let errorMessage = "Failed to create match";
-      if (e?.code === "DUPLICATE_MATCH") {
+      if (e?.code === "DUPLICATE_MATCH_SAME_VENUE_TIME") {
+        errorMessage = "A match already exists at this venue, date, and time";
+      } else if (e?.code === "DUPLICATE_MATCH") {
         errorMessage = "Match already exists";
       } else if (e?.code === "DUPLICATE_MATCH_DIFFERENT_VENUE") {
         errorMessage = "A match with the same teams at the same time already exists at a different venue";
