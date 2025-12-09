@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+/* Hidden-until-hover, muted horizontal scrollbar */
+.scrollbar-fade-muted {
+  /* Firefox */
+  scrollbar-width: none;                 /* hidden by default */
+  scrollbar-color: transparent transparent;
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.scrollbar-fade-muted::-webkit-scrollbar {
+  height: 6px;                           /* thin horizontal bar */
+}
+.scrollbar-fade-muted::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-fade-muted::-webkit-scrollbar-thumb {
+  background-color: transparent;         /* hidden until hover */
+  border-radius: 9999px;
+}
+
+/* On hover: show a muted thumb */
+.scrollbar-fade-muted:hover {
+  scrollbar-width: thin;                 /* Firefox shows thin bar */
+  scrollbar-color: #3b3b3b transparent;  /* muted thumb, transparent track */
+}
+.scrollbar-fade-muted:hover::-webkit-scrollbar-thumb {
+  background-color: #3b3b3b;             /* muted gray */
+}
+.scrollbar-fade-muted:hover::-webkit-scrollbar-thumb:hover {
+  background-color: #4a4a4a;             /* slightly brighter on hover */
+}
