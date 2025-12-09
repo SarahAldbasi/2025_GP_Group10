@@ -17,13 +17,13 @@
 
 To install and run the APKs using an Android Emulator:
 
-1. Download the `HakkimSmartWatch.zip` file from this repository.
-2. Extract the ZIP file to access the `G#8_Hakkim_SmartwatchApp.apk` or `G#8_Hakkim_MobileApp.apk`.
+1. Download the `G#8_Hakkim_Application_Execuatable.zip` `G#8_Hakkim_watch_Execuatable.zip` files from this repository.
+2. Extract the ZIP files to access the `G#8_Hakkim_Application_Execuatable.apk` or `G#8_Hakkim_watch_Execuatable.apk`.
 3. Open **Android Studio**.
 4. Launch **Wear OS emulator** for SmartWatch and **Phone emulator** for Mobile App from the Device Manager.
 5. Use the terminal or command line to install the APK:
 
-   ex: adb install path/to/G#8_Hakkim_SmartwatchApp.apk
+   ex: adb install path/to/G#8_Hakkim_watch_Execuatable.apk
 6. Once the installation is complete, you can find the app in the emulator's app menu. Tap on it to open and start using the app.
 
 - ### Web App
