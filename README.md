@@ -32,4 +32,7 @@ To install and run the APKs using an Android Emulator:
 
 🔗 **URL**: https://hakkim-database-42b05.web.app/
 
+- ### Jira project link
+ 🔗 **URL**: https://studentteamg38il4ax.atlassian.net/jira/software/projects/GP10/boards/1?atlOrigin=eyJpIjoiNGI0ODg1NTZhMTU3NGFjNGEzZjI4ZWRmZGY4ZGMwOGUiLCJwIjoiaiJ9
+
 2025_GP_Group10
