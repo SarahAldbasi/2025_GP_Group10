@@ -28,9 +28,23 @@ To install and run the APKs using an Android Emulator:
 
 - ### Web App
 
- You can open the URL using private\incognito mode 
+ You can open the URL using private\incognito mode In case the web app doesn't open as expected, to avoid any cache-related issues.
 
 🔗 **URL**: https://hakkim-database-42b05.web.app/
+
+- ### Credentials
+  
+  **Mobile App:**
+   user: noura1@gmail.com
+   password: Noura@12345
+
+  **Web App:**
+   user: rmalzkeri1@gmail.com
+   password: KSUksu111&
+
+  **Watch App:**
+   referee pin: 05526
+   match code: 00001
 
 - ### Jira project link
  🔗 **URL**: https://studentteamg38il4ax.atlassian.net/jira/software/projects/GP10/boards/1?atlOrigin=eyJpIjoiNGI0ODg1NTZhMTU3NGFjNGEzZjI4ZWRmZGY4ZGMwOGUiLCJwIjoiaiJ9
