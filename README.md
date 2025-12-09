@@ -35,4 +35,7 @@ To install and run the APKs using an Android Emulator:
 - ### Jira project link
  🔗 **URL**: https://studentteamg38il4ax.atlassian.net/jira/software/projects/GP10/boards/1?atlOrigin=eyJpIjoiNGI0ODg1NTZhMTU3NGFjNGEzZjI4ZWRmZGY4ZGMwOGUiLCJwIjoiaiJ9
 
+ - ### GitHub repository link
+ 🔗 **URL**: https://github.com/SarahAldbasi/2025_GP_Group10
+
 2025_GP_Group10
